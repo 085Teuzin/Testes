@@ -3,117 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Obby 3D</title>
+    <title>Obby 3D</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: sans-serif; }
-        #ui { position: absolute; top: 20px; left: 20px; color: white; text-shadow: 2px 2px 4px #000; }
+        body { margin: 0; overflow: hidden; font-family: sans-serif; background: #000; }
+        #ui { position: absolute; top: 20px; left: 20px; color: white; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; pointer-events: none; }
+        #level-info { position: absolute; top: 20px; right: 20px; color: gold; font-size: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div id="ui">Use WASD para mover e ESPAÇO para pular</div>
-    
+    <div id="ui">WASD: Mover | ESPAÇO: Pular</div>
+    <div id="level-info">Fase: <span id="current-lvl">1</span></div>
+
     <script type="importmap">
         { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
     </script>
 
     <script type="module">
         import * as THREE from 'three';
-        import { FASES } from './fases.js';
+        import { FASES } from './Fases.js';
 
-        // Configuração Básica
+        let faseAtual = 0;
+        let plataformas = [];
+        let checkpointFinal = null;
+        
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87ceeb); // Céu azul
+        scene.background = new THREE.Color(0x87ceeb);
+        scene.fog = new THREE.Fog(0x87ceeb, 20, 100);
+
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        // Luzes
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-        const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        sunLight.position.set(5, 10, 7);
-        scene.add(sunLight);
+        const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambient);
+        const sun = new THREE.DirectionalLight(0xffffff, 1);
+        sun.position.set(10, 20, 10);
+        sun.castShadow = true;
+        scene.add(sun);
 
-        // Jogador (Cubo)
-        const playerGeo = new THREE.BoxGeometry(1, 1, 1);
-        const playerMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-        const player = new THREE.Mesh(playerGeo, playerMat);
-        player.position.y = 2;
+        const player = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: 0xff3333 }));
+        player.castShadow = true;
         scene.add(player);
 
-        // Lógica de Fases
-        const plataformas = [];
+        let velocityY = 0;
+        let isGrounded = false;
+        const keys = {};
+        const moveSpeed = 0.12;
+        const jumpForce = 0.22;
+        const gravity = 0.01;
+
         function carregarFase(index) {
+            plataformas.forEach(p => scene.remove(p));
+            plataformas = [];
             const dados = FASES[index];
-            dados.plataformas.forEach(p => {
-                const geo = new THREE.BoxGeometry(p.w, 0.5, p.d);
-                const mat = new THREE.MeshStandardMaterial({ color: p.cor || 0x00ff00 });
-                const mesh = new THREE.Mesh(geo, mat);
+            document.getElementById('current-lvl').innerText = index + 1;
+
+            dados.plataformas.forEach((p, i) => {
+                const mesh = new THREE.Mesh(new THREE.BoxGeometry(p.w, 0.6, p.d), new THREE.MeshStandardMaterial({ color: p.cor || 0x00ff88 }));
                 mesh.position.set(p.x, p.y, p.z);
+                mesh.receiveShadow = true;
                 scene.add(mesh);
                 plataformas.push(mesh);
+                if (i === dados.plataformas.length - 1) checkpointFinal = mesh;
             });
+
+            player.position.set(dados.plataformas[0].x, dados.plataformas[0].y + 2, dados.plataformas[0].z);
+            velocityY = 0;
         }
 
-        carregarFase(0);
+        window.addEventListener('keydown', e => keys[e.code] = true);
+        window.addEventListener('keyup', e => keys[e.code] = false);
 
-        // Controles e Física Simples
-        const teclas = {};
-        window.addEventListener('keydown', (e) => teclas[e.code] = true);
-        window.addEventListener('keyup', (e) => teclas[e.code] = false);
+        function update() {
+            if (keys['KeyW']) player.position.z -= moveSpeed;
+            if (keys['KeyS']) player.position.z += moveSpeed;
+            if (keys['KeyA']) player.position.x -= moveSpeed;
+            if (keys['KeyD']) player.position.x += moveSpeed;
 
-        let velocityY = 0;
-        let pular = false;
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            // Movimentação lateral
-            if (teclas['KeyW']) player.position.z -= 0.1;
-            if (teclas['KeyS']) player.position.z += 0.1;
-            if (teclas['KeyA']) player.position.x -= 0.1;
-            if (teclas['KeyD']) player.position.x += 0.1;
-
-            // Gravidade e Pulo
-            velocityY -= 0.01; 
+            velocityY -= gravity;
             player.position.y += velocityY;
 
-            // Colisão simples (Chão das plataformas)
-            let noChao = false;
-            plataformas.forEach(plat => {
-                const boxPlayer = new THREE.Box3().setFromObject(player);
-                const boxPlat = new THREE.Box3().setFromObject(plat);
+            isGrounded = false;
+            const pBox = new THREE.Box3().setFromObject(player);
 
-                if (boxPlayer.intersectsBox(boxPlat) && velocityY <= 0) {
-                    player.position.y = plat.position.y + 0.5;
+            plataformas.forEach(plat => {
+                const platBox = new THREE.Box3().setFromObject(plat);
+                if (pBox.intersectsBox(platBox) && velocityY < 0) {
+                    player.position.y = plat.position.y + 0.8;
                     velocityY = 0;
-                    noChao = true;
+                    isGrounded = true;
+                    if (plat === checkpointFinal) {
+                        if (faseAtual < FASES.length - 1) { faseAtual++; carregarFase(faseAtual); }
+                        else { alert("FIM DE JOGO!"); faseAtual = 0; carregarFase(0); }
+                    }
                 }
             });
 
-            if (teclas['Space'] && noChao) velocityY = 0.2;
+            if (keys['Space'] && isGrounded) velocityY = jumpForce;
+            if (player.position.y < -15) carregarFase(faseAtual);
 
-            // Reset se cair
-            if (player.position.y < -10) {
-                player.position.set(0, 2, 0);
-                velocityY = 0;
-            }
-
-            // Câmera segue o jogador
-            camera.position.set(player.position.x, player.position.y + 5, player.position.z + 10);
+            camera.position.lerp(new THREE.Vector3(player.position.x, player.position.y + 6, player.position.z + 12), 0.1);
             camera.lookAt(player.position);
+        }
 
+        function animate() {
+            requestAnimationFrame(animate);
+            update();
             renderer.render(scene, camera);
         }
+
+        carregarFase(faseAtual);
+        animate();
 
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
-
-        animate();
     </script>
 </body>
 </html>
