@@ -23,8 +23,8 @@ export const FASES = [
         nome: "Fase 3: Escalada Precisa",
         plataformas: [
             { x: 0, y: 0, z: 0, w: 5, d: 5, cor: 0x555555 },
-            { x: 0, y: 2, z: -9, w: 3, d: 3, cor: 0xff5500 },
-            { x: 7, y: 4, z: -9, w: 3, d: 3, cor: 0xff5500 },
+            { x: 0, y: 2, z: -12, w: 3, d: 3, cor: 0xff5500 },
+            { x: 7, y: 4, z: -12, w: 3, d: 3, cor: 0xff5500 },
             { x: 7, y: 6, z: -18, w: 3, d: 3, cor: 0xff5500 },
             { x: 0, y: 8, z: -18, w: 3, d: 3, cor: 0xff5500 },
             { x: 0, y: 9, z: -30, w: 6, d: 6, cor: 0xffd700 }
