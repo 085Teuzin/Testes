@@ -6,34 +6,46 @@
     <title>Obby 3D Pro</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: sans-serif; background: #000; touch-action: none; user-select: none; }
-        #ui { position: absolute; top: 20px; left: 20px; color: white; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; pointer-events: none; }
-        #level-info { position: absolute; top: 20px; right: 20px; color: gold; font-size: 20px; font-weight: bold; }
+        #level-info { position: absolute; top: 20px; right: 20px; color: gold; font-size: 20px; font-weight: bold; z-index: 10; }
         
-        /* Botão de Configuração */
-        #settings-btn { position: absolute; top: 20px; left: 180px; padding: 10px; background: #333; color: #fff; border: 1px solid #fff; cursor: pointer; border-radius: 5px; z-index: 100; }
-        #settings-menu { position: absolute; top: 70px; left: 20px; background: rgba(0,0,0,0.8); color: white; padding: 15px; border-radius: 10px; display: none; z-index: 101; }
-
-        /* HUD Mobile */
-        .touch-hud { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; display: none; }
-        .dpad { position: absolute; bottom: 40px; left: 40px; width: 150px; height: 150px; background: rgba(255,255,255,0.1); border-radius: 50%; pointer-events: auto; }
-        .dpad-stick { position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; background: rgba(255,255,255,0.4); border-radius: 50%; transform: translate(-50%, -50%); }
+        #settings-btn { position: absolute; top: 10px; left: 10px; width: 40px; height: 40px; background: rgba(0,0,0,0.6); color: white; border: 1px solid #fff; cursor: pointer; border-radius: 5px; z-index: 100; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        
+        #pause-menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 101; color: white; }
+        .menu-card { background: #222; padding: 20px; border-radius: 10px; border: 2px solid #444; text-align: center; min-width: 250px; }
+        .btn-menu { margin: 10px; padding: 10px 20px; cursor: pointer; background: #444; color: white; border: none; border-radius: 5px; width: 100%; }
+        .btn-menu:hover { background: #666; }
+        
+        .touch-hud { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; display: none; z-index: 50; }
+        #dpad-area { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%; pointer-events: auto; border: 2px solid rgba(255,255,255,0.2); }
+        .dpad-stick { position: absolute; top: 50%; left: 50%; width: 50px; height: 50px; background: rgba(255,255,255,0.4); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
         #jump-btn { position: absolute; bottom: 60px; right: 40px; width: 80px; height: 80px; background: rgba(255,255,255,0.3); border-radius: 50%; pointer-events: auto; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border: 2px solid #fff; }
+        
+        .editing { border: 2px dashed yellow !important; opacity: 0.8; }
     </style>
 </head>
 <body>
-    <div id="ui">WASD / DPAD: Mover</div>
     <div id="level-info">Fase: <span id="current-lvl">1</span></div>
-    
-    <div id="settings-btn">⚙️ Ajustes</div>
-    <div id="settings-menu">
-        <b>Configurações</b><br><br>
-        <button onclick="redefinirHUD()">Redefinir HUD</button>
-        <button onclick="toggleMenu()">Fechar</button>
+    <div id="settings-btn">⚙️</div>
+
+    <div id="pause-menu">
+        <div class="menu-card">
+            <h2>JOGO PAUSADO</h2>
+            <div id="pc-controls" style="display:none; margin-bottom: 15px;">
+                <p>Mapear Teclas (Clique para trocar):</p>
+                <button class="btn-menu" id="bind-w">Frente: W</button>
+                <button class="btn-menu" id="bind-s">Trás: S</button>
+                <button class="btn-menu" id="bind-a">Esq: A</button>
+                <button class="btn-menu" id="bind-d">Dir: D</button>
+                <button class="btn-menu" id="bind-jump">Pulo: Space</button>
+            </div>
+            <button class="btn-menu" onclick="redefinirHUD()" id="reset-hud-btn" style="display:none;">Redefinir HUD</button>
+            <button class="btn-menu" style="background: #28a745;" onclick="togglePause()">VOLTAR</button>
+        </div>
     </div>
 
     <div id="mobile-hud" class="touch-hud">
-        <div id="dpad-area" class="dpad"><div id="stick" class="dpad-stick"></div></div>
-        <div id="jump-btn">PULAR</div>
+        <div id="dpad-area"><div id="stick" class="dpad-stick"></div></div>
+        <div id="jump-btn">PULO</div>
     </div>
 
     <script type="importmap">
@@ -44,64 +56,81 @@
         import * as THREE from 'three';
         import { FASES } from './Fases.js';
 
-        let faseAtual = 0, plataformas = [], checkpointFinal = null;
+        let faseAtual = 0, plataformas = [], checkpointFinal = null, paused = false;
         const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        if(isMobile) document.getElementById('mobile-hud').style.display = 'block';
+        
+        const config = JSON.parse(localStorage.getItem('obby_config')) || {
+            keys: { KeyW: 'w', KeyS: 's', KeyA: 'a', KeyD: 'd', Space: 'jump' },
+            hud: { dpad: { left: '40px', bottom: '40px' }, jump: { right: '40px', bottom: '60px' } }
+        };
 
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x87ceeb);
-        scene.fog = new THREE.Fog(0x87ceeb, 20, 100);
-
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
-
+        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
         const sun = new THREE.DirectionalLight(0xffffff, 1);
         sun.position.set(10, 20, 10);
-        sun.castShadow = true;
-        scene.add(sun, new THREE.AmbientLight(0xffffff, 0.7));
+        scene.add(sun);
 
         const player = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: 0xff3333 }));
-        player.castShadow = true;
         scene.add(player);
 
         let velocityY = 0, isGrounded = false;
-        const keys = { w:0, s:0, a:0, d:0, space: false };
+        const input = { w:0, s:0, a:0, d:0, jump: false };
         const moveSpeed = 0.12, jumpForce = 0.22, gravity = 0.01;
 
-        // Mobile Controls Logic
-        const dpad = document.getElementById('dpad-area'), stick = document.getElementById('stick');
-        let stickActive = false;
-        
-        dpad.addEventListener('touchstart', e => stickActive = true);
-        window.addEventListener('touchend', () => { stickActive = false; stick.style.transform = 'translate(-50%, -50%)'; keys.w=0; keys.s=0; keys.a=0; keys.d=0; });
-        window.addEventListener('touchmove', e => {
-            if(!stickActive) return;
-            const touch = e.touches[0];
-            const rect = dpad.getBoundingClientRect();
-            const centerX = rect.left + rect.width/2, centerY = rect.top + rect.height/2;
-            let dx = touch.clientX - centerX, dy = touch.clientY - centerY;
-            const dist = Math.min(60, Math.sqrt(dx*dx + dy*dy));
-            const angle = Math.atan2(dy, dx);
-            stick.style.transform = `translate(calc(-50% + ${Math.cos(angle)*dist}px), calc(-50% + ${Math.sin(angle)*dist}px))`;
-            keys.a = dx < -20 ? 1 : 0; keys.d = dx > 20 ? 1 : 0;
-            keys.w = dy < -20 ? 1 : 0; keys.s = dy > 20 ? 1 : 0;
-        });
-        document.getElementById('jump-btn').addEventListener('touchstart', () => keys.space = true);
-        document.getElementById('jump-btn').addEventListener('touchend', () => keys.space = false);
+        const dpad = document.getElementById('dpad-area'), jumpBtn = document.getElementById('jump-btn'), stick = document.getElementById('stick');
+        let dpadTouchId = null;
 
-        // PC Controls
+        function applyHUD() {
+            dpad.style.left = config.hud.dpad.left; dpad.style.bottom = config.hud.dpad.bottom; dpad.style.top = config.hud.dpad.top || 'auto';
+            jumpBtn.style.right = config.hud.jump.right; jumpBtn.style.bottom = config.hud.jump.bottom; jumpBtn.style.top = config.hud.jump.top || 'auto';
+            if(!isMobile) document.getElementById('pc-controls').style.display = 'block';
+            else { document.getElementById('mobile-hud').style.display = 'block'; document.getElementById('reset-hud-btn').style.display = 'block'; }
+        }
+        applyHUD();
+
+        dpad.addEventListener('touchstart', e => { 
+            if(paused) return;
+            dpadTouchId = e.changedTouches[0].identifier;
+        });
+        window.addEventListener('touchmove', e => {
+            if(paused) return;
+            for(let t of e.changedTouches) {
+                if(t.identifier === dpadTouchId) {
+                    const rect = dpad.getBoundingClientRect();
+                    const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+                    let dx = t.clientX - cx, dy = t.clientY - cy;
+                    const dist = Math.min(50, Math.sqrt(dx*dx + dy*dy));
+                    const angle = Math.atan2(dy, dx);
+                    stick.style.transform = `translate(calc(-50% + ${Math.cos(angle)*dist}px), calc(-50% + ${Math.sin(angle)*dist}px))`;
+                    input.a = dx < -15 ? 1 : 0; input.d = dx > 15 ? 1 : 0;
+                    input.w = dy < -15 ? 1 : 0; input.s = dy > 15 ? 1 : 0;
+                }
+            }
+        });
+        window.addEventListener('touchend', e => {
+            for(let t of e.changedTouches) {
+                if(t.identifier === dpadTouchId) {
+                    dpadTouchId = null; stick.style.transform = 'translate(-50%, -50%)';
+                    input.w=0; input.s=0; input.a=0; input.d=0;
+                }
+            }
+        });
+        jumpBtn.addEventListener('touchstart', (e) => { if(!paused) input.jump = true; });
+        jumpBtn.addEventListener('touchend', () => input.jump = false);
+
         window.addEventListener('keydown', e => {
-            if(e.code === 'KeyW') keys.w=1; if(e.code === 'KeyS') keys.s=1;
-            if(e.code === 'KeyA') keys.a=1; if(e.code === 'KeyD') keys.d=1;
-            if(e.code === 'Space') keys.space=true;
+            if(paused) return;
+            const action = config.keys[e.code];
+            if(action) input[action] = true;
         });
         window.addEventListener('keyup', e => {
-            if(e.code === 'KeyW') keys.w=0; if(e.code === 'KeyS') keys.s=0;
-            if(e.code === 'KeyA') keys.a=0; if(e.code === 'KeyD') keys.d=0;
-            if(e.code === 'Space') keys.space=false;
+            const action = config.keys[e.code];
+            if(action) input[action] = false;
         });
 
         function carregarFase(index) {
@@ -112,7 +141,6 @@
             dados.plataformas.forEach((p, i) => {
                 const mesh = new THREE.Mesh(new THREE.BoxGeometry(p.w, 0.6, p.d), new THREE.MeshStandardMaterial({ color: p.cor || 0x00ff88 }));
                 mesh.position.set(p.x, p.y, p.z);
-                mesh.receiveShadow = true;
                 scene.add(mesh);
                 plataformas.push(mesh);
                 if (i === dados.plataformas.length - 1) checkpointFinal = mesh;
@@ -121,9 +149,40 @@
             velocityY = 0;
         }
 
+        window.togglePause = () => {
+            paused = !paused;
+            document.getElementById('pause-menu').style.display = paused ? 'flex' : 'none';
+            dpad.classList.toggle('editing', paused);
+            jumpBtn.classList.toggle('editing', paused);
+        };
+        document.getElementById('settings-btn').onclick = togglePause;
+
+        window.redefinirHUD = () => {
+            config.hud = { dpad: { left: '40px', bottom: '40px' }, jump: { right: '40px', bottom: '60px' } };
+            localStorage.setItem('obby_config', JSON.stringify(config));
+            applyHUD();
+        };
+
+        const setupDrag = (el, type) => {
+            let dragging = false;
+            el.addEventListener('touchstart', e => { if(paused) dragging = true; });
+            window.addEventListener('touchmove', e => {
+                if(!paused || !dragging) return;
+                const t = e.touches[0];
+                el.style.left = t.clientX - el.offsetWidth/2 + "px";
+                el.style.top = t.clientY - el.offsetHeight/2 + "px";
+                el.style.bottom = 'auto'; el.style.right = 'auto';
+                config.hud[type] = { left: el.style.left, top: el.style.top, bottom: 'auto', right: 'auto' };
+                localStorage.setItem('obby_config', JSON.stringify(config));
+            });
+            window.addEventListener('touchend', () => dragging = false);
+        };
+        setupDrag(dpad, 'dpad'); setupDrag(jumpBtn, 'jump');
+
         function update() {
-            if (keys.w) player.position.z -= moveSpeed; if (keys.s) player.position.z += moveSpeed;
-            if (keys.a) player.position.x -= moveSpeed; if (keys.d) player.position.x += moveSpeed;
+            if(paused) return;
+            if (input.w) player.position.z -= moveSpeed; if (input.s) player.position.z += moveSpeed;
+            if (input.a) player.position.x -= moveSpeed; if (input.d) player.position.x += moveSpeed;
             velocityY -= gravity; player.position.y += velocityY;
             isGrounded = false;
             const pBox = new THREE.Box3().setFromObject(player);
@@ -138,7 +197,7 @@
                     }
                 }
             });
-            if (keys.space && isGrounded) velocityY = jumpForce;
+            if (input.jump && isGrounded) velocityY = jumpForce;
             if (player.position.y < -15) carregarFase(faseAtual);
             camera.position.lerp(new THREE.Vector3(player.position.x, player.position.y + 6, player.position.z + 12), 0.1);
             camera.lookAt(player.position);
@@ -146,39 +205,6 @@
 
         function animate() { requestAnimationFrame(animate); update(); renderer.render(scene, camera); }
         carregarFase(faseAtual); animate();
-        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
-
-        // Ajustes e Customização HUD
-        window.toggleMenu = () => {
-            const m = document.getElementById('settings-menu');
-            m.style.display = m.style.display === 'block' ? 'none' : 'block';
-        };
-        document.getElementById('settings-btn').onclick = toggleMenu;
-
-        let editMode = false;
-        window.redefinirHUD = () => {
-            const d = document.getElementById('dpad-area');
-            const j = document.getElementById('jump-btn');
-            d.style.bottom = "40px"; d.style.left = "40px";
-            j.style.bottom = "60px"; j.style.right = "40px";
-            alert("HUD Redefinido!");
-        };
-
-        // Arrastar botões (Ajuste simples)
-        const drag = (el) => {
-            let active = false;
-            el.addEventListener('touchstart', () => active = true);
-            window.addEventListener('touchmove', (e) => {
-                if(!active || !editMode) return;
-                const t = e.touches[0];
-                el.style.left = t.clientX - el.offsetWidth/2 + "px";
-                el.style.top = t.clientY - el.offsetHeight/2 + "px";
-                el.style.bottom = "auto"; el.style.right = "auto";
-            });
-            window.addEventListener('touchend', () => active = false);
-        };
-        drag(document.getElementById('dpad-area'));
-        drag(document.getElementById('jump-btn'));
     </script>
 </body>
 </html>
