@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Obby 3D</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: sans-serif; }
+        #ui { position: absolute; top: 20px; left: 20px; color: white; text-shadow: 2px 2px 4px #000; }
+    </style>
+</head>
+<body>
+    <div id="ui">Use WASD para mover e ESPAÇO para pular</div>
+    
+    <script type="importmap">
+        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { FASES } from './fases.js';
+
+        // Configuração Básica
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87ceeb); // Céu azul
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Luzes
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        sunLight.position.set(5, 10, 7);
+        scene.add(sunLight);
+
+        // Jogador (Cubo)
+        const playerGeo = new THREE.BoxGeometry(1, 1, 1);
+        const playerMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+        const player = new THREE.Mesh(playerGeo, playerMat);
+        player.position.y = 2;
+        scene.add(player);
+
+        // Lógica de Fases
+        const plataformas = [];
+        function carregarFase(index) {
+            const dados = FASES[index];
+            dados.plataformas.forEach(p => {
+                const geo = new THREE.BoxGeometry(p.w, 0.5, p.d);
+                const mat = new THREE.MeshStandardMaterial({ color: p.cor || 0x00ff00 });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(p.x, p.y, p.z);
+                scene.add(mesh);
+                plataformas.push(mesh);
+            });
+        }
+
+        carregarFase(0);
+
+        // Controles e Física Simples
+        const teclas = {};
+        window.addEventListener('keydown', (e) => teclas[e.code] = true);
+        window.addEventListener('keyup', (e) => teclas[e.code] = false);
+
+        let velocityY = 0;
+        let pular = false;
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Movimentação lateral
+            if (teclas['KeyW']) player.position.z -= 0.1;
+            if (teclas['KeyS']) player.position.z += 0.1;
+            if (teclas['KeyA']) player.position.x -= 0.1;
+            if (teclas['KeyD']) player.position.x += 0.1;
+
+            // Gravidade e Pulo
+            velocityY -= 0.01; 
+            player.position.y += velocityY;
+
+            // Colisão simples (Chão das plataformas)
+            let noChao = false;
+            plataformas.forEach(plat => {
+                const boxPlayer = new THREE.Box3().setFromObject(player);
+                const boxPlat = new THREE.Box3().setFromObject(plat);
+
+                if (boxPlayer.intersectsBox(boxPlat) && velocityY <= 0) {
+                    player.position.y = plat.position.y + 0.5;
+                    velocityY = 0;
+                    noChao = true;
+                }
+            });
+
+            if (teclas['Space'] && noChao) velocityY = 0.2;
+
+            // Reset se cair
+            if (player.position.y < -10) {
+                player.position.set(0, 2, 0);
+                velocityY = 0;
+            }
+
+            // Câmera segue o jogador
+            camera.position.set(player.position.x, player.position.y + 5, player.position.z + 10);
+            camera.lookAt(player.position);
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>
