@@ -3,33 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Obby 3D 60FPS</title>
+    <title>Obby 3D Master</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: sans-serif; background: #000; touch-action: none; user-select: none; }
         #level-info { position: absolute; top: 20px; right: 20px; color: gold; font-size: 20px; font-weight: bold; z-index: 10; text-shadow: 2px 2px 2px #000; }
+        #timer-display { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); color: white; font-size: 24px; font-weight: bold; z-index: 10; text-shadow: 2px 2px 2px #000; }
+        #stats-btn { position: absolute; top: 15px; left: 15px; width: 45px; height: 45px; background: rgba(0,0,0,0.6); color: white; border: 2px solid gold; cursor: pointer; border-radius: 50%; z-index: 100; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        #stats-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: #222; width: 80%; max-width: 400px; height: 70vh; border-radius: 15px; border: 2px solid gold; display: flex; flex-direction: column; padding: 20px; color: white; }
+        .modal-header { font-size: 22px; font-weight: bold; color: gold; margin-bottom: 15px; text-align: center; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        #times-list { flex-grow: 1; overflow-y: auto; margin-bottom: 15px; padding-right: 5px; }
+        .time-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #333; font-family: monospace; font-size: 16px; }
+        .close-btn { background: gold; color: black; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .touch-hud { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; z-index: 50; }
         #dpad-area { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%; pointer-events: auto; border: 2px solid rgba(255,255,255,0.2); }
         .dpad-stick { position: absolute; top: 50%; left: 50%; width: 50px; height: 50px; background: rgba(255,255,255,0.4); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
         #jump-btn { position: absolute; bottom: 60px; right: 40px; width: 80px; height: 80px; background: rgba(255,255,255,0.3); border-radius: 50%; pointer-events: auto; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border: 2px solid #fff; }
+        #progress-container { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); width: 60%; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; z-index: 10; }
+        #progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #ff0000, #ffd700); transition: width 0.3s; }
     </style>
 </head>
 <body>
     <div id="level-info">Fase: <span id="current-lvl">1</span></div>
+    <div id="timer-display">00:00.0</div>
+    <div id="stats-btn">⭐️</div>
+    <div id="progress-container"><div id="progress-bar"></div></div>
+    <div id="stats-modal"><div class="modal-content"><div class="modal-header">TEMPOS POR FASE</div><div id="times-list"></div><button class="close-btn" onclick="toggleModal()">FECHAR</button></div></div>
+    <div id="mobile-hud" class="touch-hud"><div id="dpad-area"><div id="stick" class="dpad-stick"></div></div><div id="jump-btn">PULO</div></div>
 
-    <div id="mobile-hud" class="touch-hud">
-        <div id="dpad-area"><div id="stick" class="dpad-stick"></div></div>
-        <div id="jump-btn">PULO</div>
-    </div>
-
-    <script type="importmap">
-        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
-    </script>
-
+    <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
     <script type="module">
         import * as THREE from 'three';
         import { FASES } from './Fases.js';
 
-        let faseAtual = 0, plataformas = [], checkpointFinal = null, aguardandoProxima = false;
+        let faseAtual = 0, plataformas = [], lavas = [], checkpointFinal = null, aguardandoProxima = false;
+        let faseStartTime = Date.now(), faseTimes = [];
         const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
         if(!isMobile) document.getElementById('mobile-hud').style.display = 'none';
 
@@ -40,7 +48,6 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(renderer.domElement);
-        
         scene.add(new THREE.AmbientLight(0xffffff, 0.8));
         const sun = new THREE.DirectionalLight(0xffffff, 1);
         sun.position.set(5, 15, 10);
@@ -97,18 +104,47 @@
             if(e.code === 'Space') input.jump=false;
         });
 
+        function formatTime(ms) {
+            const totalSec = ms / 1000;
+            const m = Math.floor(totalSec / 60);
+            const s = Math.floor(totalSec % 60);
+            return m > 0 ? `${m}m e ${s}s` : `${s}.${Math.floor((ms % 1000) / 100)}s`;
+        }
+
+        window.toggleModal = () => {
+            const modal = document.getElementById('stats-modal');
+            const isVisible = modal.style.display === 'flex';
+            modal.style.display = isVisible ? 'none' : 'flex';
+            if (!isVisible) {
+                document.getElementById('times-list').innerHTML = faseTimes.map((t, i) => `
+                    <div class="time-item"><span>F${i+1}</span><span>${formatTime(t)}</span></div>
+                `).join('');
+            }
+        };
+        document.getElementById('stats-btn').onclick = toggleModal;
+
         function carregarFase(index) {
             aguardandoProxima = false;
             plataformas.forEach(p => scene.remove(p));
-            plataformas = [];
+            lavas.forEach(l => scene.remove(l));
+            plataformas = []; lavas = [];
+            faseStartTime = Date.now();
             const dados = FASES[index];
             document.getElementById('current-lvl').innerText = index + 1;
+            document.getElementById('progress-bar').style.width = `${(index / FASES.length) * 100}%`;
+            scene.background = new THREE.Color(`hsl(${(index * 137.5) % 360}, 40%, 75%)`);
             dados.plataformas.forEach((p, i) => {
                 const mesh = new THREE.Mesh(new THREE.BoxGeometry(p.w, 0.6, p.d), new THREE.MeshStandardMaterial({ color: p.cor }));
                 mesh.position.set(p.x, p.y, p.z);
                 scene.add(mesh);
                 plataformas.push(mesh);
                 if (i === dados.plataformas.length - 1) checkpointFinal = mesh;
+                if (p.lava) {
+                    const lMesh = new THREE.Mesh(new THREE.BoxGeometry(p.w + 0.1, 0.4, p.d + 0.1), new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0.5 }));
+                    lMesh.position.set(p.x, p.y + 0.2, p.z);
+                    scene.add(lMesh);
+                    lavas.push(lMesh);
+                }
             });
             player.position.set(dados.plataformas[0].x, dados.plataformas[0].y + 2, dados.plataformas[0].z);
             velocityY = 0;
@@ -119,63 +155,38 @@
             const now = performance.now();
             if (now - lastTime < 16.6) return;
             lastTime = now;
-
+            document.getElementById('timer-display').innerText = ((Date.now() - faseStartTime) / 1000).toFixed(1) + "s";
             if (aguardandoProxima) return;
-
-            if (input.w) player.position.z -= moveSpeed;
-            if (input.s) player.position.z += moveSpeed;
-            if (input.a) player.position.x -= moveSpeed;
-            if (input.d) player.position.x += moveSpeed;
-
-            velocityY -= gravity;
-            player.position.y += velocityY;
-
-            isGrounded = false;
+            if (input.w) player.position.z -= moveSpeed; if (input.s) player.position.z += moveSpeed;
+            if (input.a) player.position.x -= moveSpeed; if (input.d) player.position.x += moveSpeed;
+            velocityY -= gravity; player.position.y += velocityY;
             const pBox = new THREE.Box3().setFromObject(player);
-
+            lavas.forEach(lava => { if (pBox.intersectsBox(new THREE.Box3().setFromObject(lava))) carregarFase(faseAtual); });
+            isGrounded = false;
             plataformas.forEach(plat => {
                 const platBox = new THREE.Box3().setFromObject(plat);
                 if (pBox.intersectsBox(platBox) && velocityY <= 0) {
                     player.position.y = plat.position.y + 0.8;
-                    velocityY = 0;
-                    isGrounded = true;
-
+                    velocityY = 0; isGrounded = true;
                     if (plat === checkpointFinal) {
                         aguardandoProxima = true;
+                        faseTimes[faseAtual] = Date.now() - faseStartTime;
                         setTimeout(() => {
-                            if (faseAtual < FASES.length - 1) {
-                                faseAtual++;
-                                carregarFase(faseAtual);
-                            } else {
-                                alert("VENCEU!");
-                                faseAtual = 0;
-                                carregarFase(0);
-                            }
+                            if (faseAtual < FASES.length - 1) { faseAtual++; carregarFase(faseAtual); }
+                            else { alert("VENCEU!"); faseAtual = 0; faseTimes = []; carregarFase(0); }
                         }, 1000);
                     }
                 }
             });
-
             if (input.jump && isGrounded) velocityY = jumpForce;
             if (player.position.y < -15) carregarFase(faseAtual);
-
             camera.position.lerp(new THREE.Vector3(player.position.x, player.position.y + 6, player.position.z + 10), 0.1);
             camera.lookAt(player.position);
         }
 
-        function animate() {
-            requestAnimationFrame(animate);
-            update();
-            renderer.render(scene, camera);
-        }
-
-        carregarFase(faseAtual);
-        animate();
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+        function animate() { requestAnimationFrame(animate); update(); renderer.render(scene, camera); }
+        carregarFase(faseAtual); animate();
+        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
     </script>
 </body>
 </html>
