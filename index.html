@@ -2,17 +2,39 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Obby 3D</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Obby 3D Pro</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: sans-serif; background: #000; }
+        body { margin: 0; overflow: hidden; font-family: sans-serif; background: #000; touch-action: none; user-select: none; }
         #ui { position: absolute; top: 20px; left: 20px; color: white; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; pointer-events: none; }
         #level-info { position: absolute; top: 20px; right: 20px; color: gold; font-size: 20px; font-weight: bold; }
+        
+        /* Botão de Configuração */
+        #settings-btn { position: absolute; top: 20px; left: 180px; padding: 10px; background: #333; color: #fff; border: 1px solid #fff; cursor: pointer; border-radius: 5px; z-index: 100; }
+        #settings-menu { position: absolute; top: 70px; left: 20px; background: rgba(0,0,0,0.8); color: white; padding: 15px; border-radius: 10px; display: none; z-index: 101; }
+
+        /* HUD Mobile */
+        .touch-hud { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; display: none; }
+        .dpad { position: absolute; bottom: 40px; left: 40px; width: 150px; height: 150px; background: rgba(255,255,255,0.1); border-radius: 50%; pointer-events: auto; }
+        .dpad-stick { position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; background: rgba(255,255,255,0.4); border-radius: 50%; transform: translate(-50%, -50%); }
+        #jump-btn { position: absolute; bottom: 60px; right: 40px; width: 80px; height: 80px; background: rgba(255,255,255,0.3); border-radius: 50%; pointer-events: auto; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border: 2px solid #fff; }
     </style>
 </head>
 <body>
-    <div id="ui">WASD: Mover | ESPAÇO: Pular</div>
+    <div id="ui">WASD / DPAD: Mover</div>
     <div id="level-info">Fase: <span id="current-lvl">1</span></div>
+    
+    <div id="settings-btn">⚙️ Ajustes</div>
+    <div id="settings-menu">
+        <b>Configurações</b><br><br>
+        <button onclick="redefinirHUD()">Redefinir HUD</button>
+        <button onclick="toggleMenu()">Fechar</button>
+    </div>
+
+    <div id="mobile-hud" class="touch-hud">
+        <div id="dpad-area" class="dpad"><div id="stick" class="dpad-stick"></div></div>
+        <div id="jump-btn">PULAR</div>
+    </div>
 
     <script type="importmap">
         { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
@@ -22,10 +44,10 @@
         import * as THREE from 'three';
         import { FASES } from './Fases.js';
 
-        let faseAtual = 0;
-        let plataformas = [];
-        let checkpointFinal = null;
-        
+        let faseAtual = 0, plataformas = [], checkpointFinal = null;
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if(isMobile) document.getElementById('mobile-hud').style.display = 'block';
+
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x87ceeb);
         scene.fog = new THREE.Fog(0x87ceeb, 20, 100);
@@ -36,30 +58,57 @@
         renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        const ambient = new THREE.AmbientLight(0xffffff, 0.7);
-        scene.add(ambient);
         const sun = new THREE.DirectionalLight(0xffffff, 1);
         sun.position.set(10, 20, 10);
         sun.castShadow = true;
-        scene.add(sun);
+        scene.add(sun, new THREE.AmbientLight(0xffffff, 0.7));
 
         const player = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: 0xff3333 }));
         player.castShadow = true;
         scene.add(player);
 
-        let velocityY = 0;
-        let isGrounded = false;
-        const keys = {};
-        const moveSpeed = 0.12;
-        const jumpForce = 0.22;
-        const gravity = 0.01;
+        let velocityY = 0, isGrounded = false;
+        const keys = { w:0, s:0, a:0, d:0, space: false };
+        const moveSpeed = 0.12, jumpForce = 0.22, gravity = 0.01;
+
+        // Mobile Controls Logic
+        const dpad = document.getElementById('dpad-area'), stick = document.getElementById('stick');
+        let stickActive = false;
+        
+        dpad.addEventListener('touchstart', e => stickActive = true);
+        window.addEventListener('touchend', () => { stickActive = false; stick.style.transform = 'translate(-50%, -50%)'; keys.w=0; keys.s=0; keys.a=0; keys.d=0; });
+        window.addEventListener('touchmove', e => {
+            if(!stickActive) return;
+            const touch = e.touches[0];
+            const rect = dpad.getBoundingClientRect();
+            const centerX = rect.left + rect.width/2, centerY = rect.top + rect.height/2;
+            let dx = touch.clientX - centerX, dy = touch.clientY - centerY;
+            const dist = Math.min(60, Math.sqrt(dx*dx + dy*dy));
+            const angle = Math.atan2(dy, dx);
+            stick.style.transform = `translate(calc(-50% + ${Math.cos(angle)*dist}px), calc(-50% + ${Math.sin(angle)*dist}px))`;
+            keys.a = dx < -20 ? 1 : 0; keys.d = dx > 20 ? 1 : 0;
+            keys.w = dy < -20 ? 1 : 0; keys.s = dy > 20 ? 1 : 0;
+        });
+        document.getElementById('jump-btn').addEventListener('touchstart', () => keys.space = true);
+        document.getElementById('jump-btn').addEventListener('touchend', () => keys.space = false);
+
+        // PC Controls
+        window.addEventListener('keydown', e => {
+            if(e.code === 'KeyW') keys.w=1; if(e.code === 'KeyS') keys.s=1;
+            if(e.code === 'KeyA') keys.a=1; if(e.code === 'KeyD') keys.d=1;
+            if(e.code === 'Space') keys.space=true;
+        });
+        window.addEventListener('keyup', e => {
+            if(e.code === 'KeyW') keys.w=0; if(e.code === 'KeyS') keys.s=0;
+            if(e.code === 'KeyA') keys.a=0; if(e.code === 'KeyD') keys.d=0;
+            if(e.code === 'Space') keys.space=false;
+        });
 
         function carregarFase(index) {
             plataformas.forEach(p => scene.remove(p));
             plataformas = [];
             const dados = FASES[index];
             document.getElementById('current-lvl').innerText = index + 1;
-
             dados.plataformas.forEach((p, i) => {
                 const mesh = new THREE.Mesh(new THREE.BoxGeometry(p.w, 0.6, p.d), new THREE.MeshStandardMaterial({ color: p.cor || 0x00ff88 }));
                 mesh.position.set(p.x, p.y, p.z);
@@ -68,60 +117,68 @@
                 plataformas.push(mesh);
                 if (i === dados.plataformas.length - 1) checkpointFinal = mesh;
             });
-
             player.position.set(dados.plataformas[0].x, dados.plataformas[0].y + 2, dados.plataformas[0].z);
             velocityY = 0;
         }
 
-        window.addEventListener('keydown', e => keys[e.code] = true);
-        window.addEventListener('keyup', e => keys[e.code] = false);
-
         function update() {
-            if (keys['KeyW']) player.position.z -= moveSpeed;
-            if (keys['KeyS']) player.position.z += moveSpeed;
-            if (keys['KeyA']) player.position.x -= moveSpeed;
-            if (keys['KeyD']) player.position.x += moveSpeed;
-
-            velocityY -= gravity;
-            player.position.y += velocityY;
-
+            if (keys.w) player.position.z -= moveSpeed; if (keys.s) player.position.z += moveSpeed;
+            if (keys.a) player.position.x -= moveSpeed; if (keys.d) player.position.x += moveSpeed;
+            velocityY -= gravity; player.position.y += velocityY;
             isGrounded = false;
             const pBox = new THREE.Box3().setFromObject(player);
-
             plataformas.forEach(plat => {
                 const platBox = new THREE.Box3().setFromObject(plat);
                 if (pBox.intersectsBox(platBox) && velocityY < 0) {
                     player.position.y = plat.position.y + 0.8;
-                    velocityY = 0;
-                    isGrounded = true;
+                    velocityY = 0; isGrounded = true;
                     if (plat === checkpointFinal) {
                         if (faseAtual < FASES.length - 1) { faseAtual++; carregarFase(faseAtual); }
-                        else { alert("FIM DE JOGO!"); faseAtual = 0; carregarFase(0); }
+                        else { alert("VENCEU!"); faseAtual = 0; carregarFase(0); }
                     }
                 }
             });
-
-            if (keys['Space'] && isGrounded) velocityY = jumpForce;
+            if (keys.space && isGrounded) velocityY = jumpForce;
             if (player.position.y < -15) carregarFase(faseAtual);
-
             camera.position.lerp(new THREE.Vector3(player.position.x, player.position.y + 6, player.position.z + 12), 0.1);
             camera.lookAt(player.position);
         }
 
-        function animate() {
-            requestAnimationFrame(animate);
-            update();
-            renderer.render(scene, camera);
-        }
+        function animate() { requestAnimationFrame(animate); update(); renderer.render(scene, camera); }
+        carregarFase(faseAtual); animate();
+        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
 
-        carregarFase(faseAtual);
-        animate();
+        // Ajustes e Customização HUD
+        window.toggleMenu = () => {
+            const m = document.getElementById('settings-menu');
+            m.style.display = m.style.display === 'block' ? 'none' : 'block';
+        };
+        document.getElementById('settings-btn').onclick = toggleMenu;
 
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+        let editMode = false;
+        window.redefinirHUD = () => {
+            const d = document.getElementById('dpad-area');
+            const j = document.getElementById('jump-btn');
+            d.style.bottom = "40px"; d.style.left = "40px";
+            j.style.bottom = "60px"; j.style.right = "40px";
+            alert("HUD Redefinido!");
+        };
+
+        // Arrastar botões (Ajuste simples)
+        const drag = (el) => {
+            let active = false;
+            el.addEventListener('touchstart', () => active = true);
+            window.addEventListener('touchmove', (e) => {
+                if(!active || !editMode) return;
+                const t = e.touches[0];
+                el.style.left = t.clientX - el.offsetWidth/2 + "px";
+                el.style.top = t.clientY - el.offsetHeight/2 + "px";
+                el.style.bottom = "auto"; el.style.right = "auto";
+            });
+            window.addEventListener('touchend', () => active = false);
+        };
+        drag(document.getElementById('dpad-area'));
+        drag(document.getElementById('jump-btn'));
     </script>
 </body>
 </html>
