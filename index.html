@@ -2,191 +2,270 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Obby 3D Master</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eterna Carta 💌</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: sans-serif; background: #000; touch-action: none; user-select: none; }
-        #level-info { position: absolute; top: 20px; right: 20px; color: gold; font-size: 20px; font-weight: bold; z-index: 10; text-shadow: 2px 2px 2px #000; }
-        #timer-display { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); color: white; font-size: 24px; font-weight: bold; z-index: 10; text-shadow: 2px 2px 2px #000; }
-        #stats-btn { position: absolute; top: 15px; left: 15px; width: 45px; height: 45px; background: rgba(0,0,0,0.6); color: white; border: 2px solid gold; cursor: pointer; border-radius: 50%; z-index: 100; display: flex; align-items: center; justify-content: center; font-size: 24px; }
-        #stats-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 1000; }
-        .modal-content { background: #222; width: 80%; max-width: 400px; height: 70vh; border-radius: 15px; border: 2px solid gold; display: flex; flex-direction: column; padding: 20px; color: white; }
-        .modal-header { font-size: 22px; font-weight: bold; color: gold; margin-bottom: 15px; text-align: center; border-bottom: 1px solid #444; padding-bottom: 10px; }
-        #times-list { flex-grow: 1; overflow-y: auto; margin-bottom: 15px; padding-right: 5px; }
-        .time-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #333; font-family: monospace; font-size: 16px; }
-        .close-btn { background: gold; color: black; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .touch-hud { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; z-index: 50; }
-        #dpad-area { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%; pointer-events: auto; border: 2px solid rgba(255,255,255,0.2); }
-        .dpad-stick { position: absolute; top: 50%; left: 50%; width: 50px; height: 50px; background: rgba(255,255,255,0.4); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
-        #jump-btn { position: absolute; bottom: 60px; right: 40px; width: 80px; height: 80px; background: rgba(255,255,255,0.3); border-radius: 50%; pointer-events: auto; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border: 2px solid #fff; }
-        #progress-container { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); width: 60%; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; z-index: 10; }
-        #progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #ff0000, #ffd700); transition: width 0.3s; }
+        :root {
+            --primary: #ff758c;
+            --secondary: #ff7eb3;
+            --bg: #fdf2f2;
+            --text: #4a4a4a;
+            --paper: #ffffff;
+            --envelope: #f8ad9d;
+            --envelope-dark: #f08080;
+            --accent: #d63031;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container { width: 100%; max-width: 500px; text-align: center; }
+
+        h1 { color: var(--primary); margin-bottom: 10px; font-size: 2rem; }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+            margin: 10px 5px;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-record { background: var(--primary); color: white; }
+        .btn-record.recording { background: #ff0000; animation: pulse 1.5s infinite; }
+        .btn-send { background: #4CAF50; color: white; display: none; }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            border: 2px solid #f0f0f0;
+            border-radius: 15px;
+            padding: 15px;
+            margin: 15px 0;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .visualizer {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            margin: 10px 0;
+        }
+        .bar { width: 4px; height: 10px; background: var(--primary); border-radius: 2px; }
+
+        .envelope-wrapper {
+            position: relative;
+            width: 300px;
+            height: 200px;
+            background: var(--envelope);
+            border-radius: 0 0 10px 10px;
+            margin: 100px auto 50px;
+            cursor: pointer;
+            perspective: 1000px;
+        }
+
+        .lid {
+            position: absolute;
+            top: 0; left: 0;
+            width: 0; height: 0;
+            border-left: 150px solid transparent;
+            border-right: 150px solid transparent;
+            border-top: 110px solid var(--envelope-dark);
+            transform-origin: top;
+            transition: transform 0.6s;
+            z-index: 3;
+        }
+
+        .letter {
+            position: absolute;
+            bottom: 10px; left: 10px;
+            width: 280px; height: 180px;
+            background: white;
+            padding: 20px;
+            transition: 0.6s 0.2s;
+            z-index: 2;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .envelope-wrapper.open .lid { transform: rotateX(180deg); z-index: 1; }
+        .envelope-wrapper.open .letter { transform: translateY(-130px); height: 250px; }
+
+        .heart-seal {
+            position: absolute;
+            top: 85px; left: 135px;
+            width: 30px; height: 30px;
+            background: var(--accent);
+            clip-path: path('M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z');
+            z-index: 4;
+            transition: 0.3s;
+        }
+        .envelope-wrapper.open .heart-seal { opacity: 0; }
+
+        .hidden { display: none; }
+        #share-area { margin-top: 20px; word-break: break-all; }
     </style>
 </head>
 <body>
-    <div id="level-info">Fase: <span id="current-lvl">1</span></div>
-    <div id="timer-display">00:00.0</div>
-    <div id="stats-btn">⭐️</div>
-    <div id="progress-container"><div id="progress-bar"></div></div>
-    <div id="stats-modal"><div class="modal-content"><div class="modal-header">TEMPOS POR FASE</div><div id="times-list"></div><button class="close-btn" onclick="toggleModal()">FECHAR</button></div></div>
-    <div id="mobile-hud" class="touch-hud"><div id="dpad-area"><div id="stick" class="dpad-stick"></div></div><div id="jump-btn">PULO</div></div>
 
-    <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
+    <div class="container">
+        <h1>Eterna Carta 💌</h1>
+
+        <div id="create-section" class="card">
+            <p>Grave sua voz e escreva sua mensagem.</p>
+            <div class="visualizer" id="visualizer"></div>
+            <button id="recordBtn" class="btn btn-record">🎙️ Iniciar Gravação</button>
+            <audio id="audioPreview" controls class="hidden" style="width:100%; margin-top:10px;"></audio>
+            <textarea id="letterText" placeholder="Escreva aqui as palavras que ela vai ler..."></textarea>
+            <button id="sendBtn" class="btn btn-send">🎁 Selar e Gerar Link</button>
+            <div id="share-area" class="hidden">
+                <p>Pronto! Envie este link para ela:</p>
+                <input type="text" id="finalUrl" readonly style="width:100%; padding:10px; margin-top:5px; border-radius:8px; border:1px solid #ddd;">
+            </div>
+        </div>
+
+        <div id="receive-section" class="hidden">
+            <div class="envelope-wrapper" id="envelope">
+                <div class="lid"></div>
+                <div class="heart-seal"></div>
+                <div class="letter">
+                    <p id="display-text" style="font-style: italic; line-height: 1.5;"></p>
+                    <button id="playVoice" class="btn btn-record" style="margin-top:20px; font-size: 0.9rem;">🔈 Ouvir Mensagem</button>
+                </div>
+            </div>
+            <p style="margin-top:20px; color: #888;">Toque no envelope para abrir</p>
+        </div>
+    </div>
+
     <script type="module">
-        import * as THREE from 'three';
-        import { FASES } from './Fases.js';
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+        import { getDatabase, ref as dbRef, set, push, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        let faseAtual = 0, plataformas = [], lavas = [], checkpointFinal = null, aguardandoProxima = false;
-        let faseStartTime = Date.now(), faseTimes = [];
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        if(!isMobile) document.getElementById('mobile-hud').style.display = 'none';
+        const firebaseConfig = {
+            apiKey: "AIzaSyDthwqD0CGFwDov-zfO-Hx6TD_y3lHsnoc",
+            authDomain: "teuzin-apps.firebaseapp.com",
+            databaseURL: "https://teuzin-apps-default-rtdb.firebaseio.com",
+            projectId: "teuzin-apps",
+            storageBucket: "teuzin-apps.firebasestorage.app",
+            messagingSenderId: "695505471506",
+            appId: "1:695505471506:web:efe322e605af4a30bfb0cb"
+        };
 
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87ceeb);
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        document.body.appendChild(renderer.domElement);
-        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-        const sun = new THREE.DirectionalLight(0xffffff, 1);
-        sun.position.set(5, 15, 10);
-        scene.add(sun);
+        const app = initializeApp(firebaseConfig);
+        const storage = getStorage(app);
+        const db = getDatabase(app);
 
-        const player = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: 0xff3333 }));
-        scene.add(player);
+        let mediaRecorder;
+        let audioChunks = [];
+        let audioBlob;
 
-        let velocityY = 0, isGrounded = false;
-        const input = { w:0, s:0, a:0, d:0, jump: false };
-        const moveSpeed = 0.15, jumpForce = 0.25, gravity = 0.01;
+        const recordBtn = document.getElementById('recordBtn');
+        const sendBtn = document.getElementById('sendBtn');
+        const visualizer = document.getElementById('visualizer');
 
-        const dpad = document.getElementById('dpad-area'), stick = document.getElementById('stick');
-        let dpadTouchId = null;
-
-        dpad.addEventListener('touchstart', e => dpadTouchId = e.changedTouches[0].identifier);
-        window.addEventListener('touchmove', e => {
-            for(let t of e.changedTouches) {
-                if(t.identifier === dpadTouchId) {
-                    const rect = dpad.getBoundingClientRect();
-                    const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
-                    let dx = t.clientX - cx, dy = t.clientY - cy;
-                    const dist = Math.min(50, Math.sqrt(dx*dx + dy*dy));
-                    const angle = Math.atan2(dy, dx);
-                    stick.style.transform = `translate(calc(-50% + ${Math.cos(angle)*dist}px), calc(-50% + ${Math.sin(angle)*dist}px))`;
-                    input.a = dx < -15 ? 1 : 0; input.d = dx > 15 ? 1 : 0;
-                    input.w = dy < -15 ? 1 : 0; input.s = dy > 15 ? 1 : 0;
-                }
-            }
-        });
-        window.addEventListener('touchend', e => {
-            for(let t of e.changedTouches) {
-                if(t.identifier === dpadTouchId) {
-                    dpadTouchId = null; stick.style.transform = 'translate(-50%, -50%)';
-                    input.w=0; input.s=0; input.a=0; input.d=0;
-                }
-            }
-        });
-        document.getElementById('jump-btn').addEventListener('touchstart', () => input.jump = true);
-        document.getElementById('jump-btn').addEventListener('touchend', () => input.jump = false);
-
-        window.addEventListener('keydown', e => {
-            if(['KeyW', 'ArrowUp'].includes(e.code)) input.w=1;
-            if(['KeyS', 'ArrowDown'].includes(e.code)) input.s=1;
-            if(['KeyA', 'ArrowLeft'].includes(e.code)) input.a=1;
-            if(['KeyD', 'ArrowRight'].includes(e.code)) input.d=1;
-            if(e.code === 'Space') input.jump=true;
-        });
-        window.addEventListener('keyup', e => {
-            if(['KeyW', 'ArrowUp'].includes(e.code)) input.w=0;
-            if(['KeyS', 'ArrowDown'].includes(e.code)) input.s=0;
-            if(['KeyA', 'ArrowLeft'].includes(e.code)) input.a=0;
-            if(['KeyD', 'ArrowRight'].includes(e.code)) input.d=0;
-            if(e.code === 'Space') input.jump=false;
-        });
-
-        function formatTime(ms) {
-            const totalSec = ms / 1000;
-            const m = Math.floor(totalSec / 60);
-            const s = Math.floor(totalSec % 60);
-            return m > 0 ? `${m}m e ${s}s` : `${s}.${Math.floor((ms % 1000) / 100)}s`;
+        for(let i=0; i<20; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'bar';
+            visualizer.appendChild(bar);
         }
 
-        window.toggleModal = () => {
-            const modal = document.getElementById('stats-modal');
-            const isVisible = modal.style.display === 'flex';
-            modal.style.display = isVisible ? 'none' : 'flex';
-            if (!isVisible) {
-                document.getElementById('times-list').innerHTML = faseTimes.map((t, i) => `
-                    <div class="time-item"><span>F${i+1}</span><span>${formatTime(t)}</span></div>
-                `).join('');
+        recordBtn.onclick = async () => {
+            if (mediaRecorder && mediaRecorder.state === "recording") {
+                mediaRecorder.stop();
+                recordBtn.textContent = "🎙️ Gravar Novamente";
+                recordBtn.classList.remove('recording');
+            } else {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                    mediaRecorder.onstop = () => {
+                        audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+                        const preview = document.getElementById('audioPreview');
+                        preview.src = URL.createObjectURL(audioBlob);
+                        preview.classList.remove('hidden');
+                        sendBtn.style.display = 'inline-flex';
+                    };
+                    mediaRecorder.start();
+                    recordBtn.textContent = "⏹️ Parar Gravação";
+                    recordBtn.classList.add('recording');
+                } catch (err) { alert("Acesso ao microfone negado!"); }
             }
         };
-        document.getElementById('stats-btn').onclick = toggleModal;
 
-        function carregarFase(index) {
-            aguardandoProxima = false;
-            plataformas.forEach(p => scene.remove(p));
-            lavas.forEach(l => scene.remove(l));
-            plataformas = []; lavas = [];
-            faseStartTime = Date.now();
-            const dados = FASES[index];
-            document.getElementById('current-lvl').innerText = index + 1;
-            document.getElementById('progress-bar').style.width = `${(index / FASES.length) * 100}%`;
-            scene.background = new THREE.Color(`hsl(${(index * 137.5) % 360}, 40%, 75%)`);
-            dados.plataformas.forEach((p, i) => {
-                const mesh = new THREE.Mesh(new THREE.BoxGeometry(p.w, 0.6, p.d), new THREE.MeshStandardMaterial({ color: p.cor }));
-                mesh.position.set(p.x, p.y, p.z);
-                scene.add(mesh);
-                plataformas.push(mesh);
-                if (i === dados.plataformas.length - 1) checkpointFinal = mesh;
-                if (p.lava) {
-                    const lMesh = new THREE.Mesh(new THREE.BoxGeometry(p.w + 0.1, 0.4, p.d + 0.1), new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0.5 }));
-                    lMesh.position.set(p.x, p.y + 0.2, p.z);
-                    scene.add(lMesh);
-                    lavas.push(lMesh);
+        sendBtn.onclick = async () => {
+            sendBtn.disabled = true;
+            sendBtn.textContent = "⌛ Embalando presente...";
+            try {
+                const text = document.getElementById('letterText').value;
+                const audioName = `audio_${Date.now()}.mp3`;
+                const audioRef = ref(storage, 'eterna_carta/' + audioName);
+                await uploadBytes(audioRef, audioBlob);
+                const audioUrl = await getDownloadURL(audioRef);
+                const dbPath = push(dbRef(db, 'cartas'));
+                await set(dbPath, { text, audioUrl, timestamp: Date.now() });
+                const finalLink = window.location.href.split('?')[0] + '?id=' + dbPath.key;
+                document.getElementById('finalUrl').value = finalLink;
+                document.getElementById('share-area').classList.remove('hidden');
+                sendBtn.textContent = "✅ Pronto!";
+            } catch (err) {
+                alert("Erro: " + err.message);
+                sendBtn.disabled = false;
+            }
+        };
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const cardId = urlParams.get('id');
+        if (cardId) {
+            document.getElementById('create-section').classList.add('hidden');
+            document.getElementById('receive-section').classList.remove('hidden');
+            get(dbRef(db, 'cartas/' + cardId)).then((snap) => {
+                if (snap.exists()) {
+                    const data = snap.val();
+                    document.getElementById('display-text').textContent = data.text;
+                    const audio = new Audio(data.audioUrl);
+                    document.getElementById('envelope').onclick = function() { this.classList.add('open'); };
+                    document.getElementById('playVoice').onclick = (e) => { e.stopPropagation(); audio.play(); };
                 }
             });
-            player.position.set(dados.plataformas[0].x, dados.plataformas[0].y + 2, dados.plataformas[0].z);
-            velocityY = 0;
         }
-
-        let lastTime = performance.now();
-        function update() {
-            const now = performance.now();
-            if (now - lastTime < 16.6) return;
-            lastTime = now;
-            document.getElementById('timer-display').innerText = ((Date.now() - faseStartTime) / 1000).toFixed(1) + "s";
-            if (aguardandoProxima) return;
-            if (input.w) player.position.z -= moveSpeed; if (input.s) player.position.z += moveSpeed;
-            if (input.a) player.position.x -= moveSpeed; if (input.d) player.position.x += moveSpeed;
-            velocityY -= gravity; player.position.y += velocityY;
-            const pBox = new THREE.Box3().setFromObject(player);
-            lavas.forEach(lava => { if (pBox.intersectsBox(new THREE.Box3().setFromObject(lava))) carregarFase(faseAtual); });
-            isGrounded = false;
-            plataformas.forEach(plat => {
-                const platBox = new THREE.Box3().setFromObject(plat);
-                if (pBox.intersectsBox(platBox) && velocityY <= 0) {
-                    player.position.y = plat.position.y + 0.8;
-                    velocityY = 0; isGrounded = true;
-                    if (plat === checkpointFinal) {
-                        aguardandoProxima = true;
-                        faseTimes[faseAtual] = Date.now() - faseStartTime;
-                        setTimeout(() => {
-                            if (faseAtual < FASES.length - 1) { faseAtual++; carregarFase(faseAtual); }
-                            else { alert("VENCEU!"); faseAtual = 0; faseTimes = []; carregarFase(0); }
-                        }, 1000);
-                    }
-                }
-            });
-            if (input.jump && isGrounded) velocityY = jumpForce;
-            if (player.position.y < -15) carregarFase(faseAtual);
-            camera.position.lerp(new THREE.Vector3(player.position.x, player.position.y + 6, player.position.z + 10), 0.1);
-            camera.lookAt(player.position);
-        }
-
-        function animate() { requestAnimationFrame(animate); update(); renderer.render(scene, camera); }
-        carregarFase(faseAtual); animate();
-        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
     </script>
 </body>
 </html>
