@@ -1,41 +1,393 @@
-<!DOCTYPE html><html lang="pt-br">
+<!DOCTYPE html>
+<html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Call Direct Live</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Call Direct - Made By: @085_Teuzinnn</title>
 <script src="https://cdn.tailwindcss.com"></script>
+
 <script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getDatabase, ref, set, onValue, push, onChildAdded, remove, onDisconnect, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
-const firebaseConfig={apiKey:'AIzaSyDthwqD0CGFwDov-zfO-Hx6TD_y3lHsnoc',authDomain:'teuzin-apps.firebaseapp.com',databaseURL:'https://teuzin-apps-default-rtdb.firebaseio.com',projectId:'teuzin-apps',storageBucket:'teuzin-apps.firebasestorage.app',messagingSenderId:'695505471506',appId:'1:695505471506:web:efe322e605af4a30bfb0cb'};
-const app=initializeApp(firebaseConfig); const db=getDatabase(app);
-const room='public_room'; const myID=Math.random().toString(36).slice(2); let userName=''; let localStream; let peers={}; let pendingIce={}; const servers={iceServers:[{urls:['stun:stun.l.google.com:19302']}]};
-window.addEventListener('load',()=>{const n=localStorage.getItem('cd_name'); if(n) document.getElementById('uName').value=n;});
-window.joinPublic=async()=>{userName=document.getElementById('uName').value.trim(); if(!userName)return; localStorage.setItem('cd_name',userName); document.getElementById('lobby').classList.add('hidden'); document.getElementById('app').classList.remove('hidden'); await init();};
-async function init(){await unlockAudio(); localStream=await navigator.mediaDevices.getUserMedia({audio:true}); const me=ref(db,`rooms/${room}/users/${myID}`); await set(me,{name:userName,id:myID}); onDisconnect(me).remove(); onValue(ref(db,`rooms/${room}/users`),snap=>{const users=snap.val()||{}; document.getElementById('status').textContent=Object.keys(users).length+' online'; Object.keys(users).forEach(id=>{if(id!==myID&&!peers[id]) setTimeout(()=>createPeer(id,true),500);});}); signals(); chat(); timer();}
-async function unlockAudio(){const a=new Audio(); try{await a.play();}catch(e){}}
-function createPeer(id,offerer){const pc=new RTCPeerConnection(servers); peers[id]=pc; localStream.getTracks().forEach(t=>pc.addTrack(t,localStream)); pc.onicecandidate=e=>{if(e.candidate) push(ref(db,`rooms/${room}/signals/${id}/${myID}/ice`),e.candidate.toJSON());}; pc.ontrack=async e=>{let audio=document.getElementById('a_'+id); if(!audio){audio=document.createElement('audio'); audio.id='a_'+id; audio.autoplay=true; audio.playsInline=true; audio.volume=1; document.body.appendChild(audio);} audio.srcObject=e.streams[0]; try{await audio.play();}catch(err){}}; if(offerer){pc.createOffer().then(o=>pc.setLocalDescription(o).then(()=>set(ref(db,`rooms/${room}/signals/${myID}/${id}/offer`),o)));}}
-function signals(){onValue(ref(db,`rooms/${room}/signals/${myID}`),async snap=>{const data=snap.val()||{}; for(const from in data){const d=data[from]; if(d.offer&&!peers[from]){createPeer(from,false); await peers[from].setRemoteDescription(new RTCSessionDescription(d.offer)); const ans=await peers[from].createAnswer(); await peers[from].setLocalDescription(ans); await set(ref(db,`rooms/${room}/signals/${from}/${myID}/answer`),ans); flushIce(from);} if(d.answer&&peers[from]&&!peers[from].currentRemoteDescription){await peers[from].setRemoteDescription(new RTCSessionDescription(d.answer)); flushIce(from);} if(d.ice){Object.values(d.ice).forEach(c=>queueIce(from,c)); remove(ref(db,`rooms/${room}/signals/${myID}/${from}/ice`));}}});}
-function queueIce(id,c){if(peers[id]?.remoteDescription) peers[id].addIceCandidate(new RTCIceCandidate(c)).catch(()=>{}); else{pendingIce[id]=pendingIce[id]||[]; pendingIce[id].push(c);}}
-function flushIce(id){(pendingIce[id]||[]).forEach(c=>peers[id].addIceCandidate(new RTCIceCandidate(c)).catch(()=>{})); pendingIce[id]=[];}
-function chat(){const chatRef=ref(db,`rooms/${room}/chat`); document.getElementById('send').onclick=()=>{const i=document.getElementById('msg'); const v=i.value.trim(); if(!v)return; push(chatRef,{user:userName,id:myID,msg:v,ts:serverTimestamp()}); i.value='';}; onChildAdded(chatRef,s=>{const d=s.val(); const box=document.createElement('div'); box.className='mb-2 text-sm'; box.innerHTML=`<b>${d.user}:</b> ${d.msg}`; const c=document.getElementById('msgs'); c.appendChild(box); c.scrollTop=999999;});}
-function timer(){let s=0; setInterval(()=>{s++; const m=String(Math.floor(s/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); document.getElementById('time').textContent=m+':'+ss;},1000);} window.toggleChat=()=>document.getElementById('chat').classList.toggle('hidden');
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+getDatabase,
+ref,
+set,
+push,
+onValue,
+onChildAdded,
+remove,
+onDisconnect,
+serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDthwqD0CGFwDov-zfO-Hx6TD_y3lHsnoc",
+  authDomain: "teuzin-apps.firebaseapp.com",
+  databaseURL: "https://teuzin-apps-default-rtdb.firebaseio.com",
+  projectId: "teuzin-apps",
+  storageBucket: "teuzin-apps.firebasestorage.app",
+  messagingSenderId: "695505471506",
+  appId: "1:695505471506:web:efe322e605af4a30bfb0cb"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const ROOM = "public";
+const myId = crypto.randomUUID();
+
+let myName = "";
+let localStream = null;
+let peers = {};
+let pendingIce = {};
+
+const rtcConfig = {
+iceServers: [
+{ urls: "stun:stun.l.google.com:19302" }
+]
+};
+
+window.addEventListener("load", () => {
+const saved = localStorage.getItem("cd_name");
+if(saved) document.getElementById("name").value = saved;
+});
+
+window.joinRoom = async () => {
+myName = document.getElementById("name").value.trim();
+if(!myName) return alert("Digite seu nome");
+
+localStorage.setItem("cd_name", myName);
+
+await unlockAudio();
+
+localStream = await navigator.mediaDevices.getUserMedia({
+audio: {
+echoCancellation: true,
+noiseSuppression: true,
+autoGainControl: true
+}
+});
+
+document.getElementById("login").classList.add("hidden");
+document.getElementById("app").classList.remove("hidden");
+
+registerPresence();
+listenUsers();
+listenSignals();
+setupChat();
+startTimer();
+};
+
+async function unlockAudio(){
+try{
+const ctx = new AudioContext();
+await ctx.resume();
+}catch(e){}
+}
+
+function registerPresence(){
+const userRef = ref(db, `rooms/${ROOM}/users/${myId}`);
+
+set(userRef,{
+id: myId,
+name: myName,
+online: true
+});
+
+onDisconnect(userRef).remove();
+}
+
+function listenUsers(){
+onValue(ref(db, `rooms/${ROOM}/users`), snap => {
+const users = snap.val() || {};
+const ids = Object.keys(users);
+
+document.getElementById("online").textContent =
+ids.length + " online";
+
+ids.forEach(id => {
+if(id === myId) return;
+if(peers[id]) return;
+
+setTimeout(() => {
+createPeer(id,true);
+},500);
+});
+});
+}
+
+async function createPeer(userId,isOfferer){
+
+const pc = new RTCPeerConnection(rtcConfig);
+peers[userId] = pc;
+
+localStream.getTracks().forEach(track=>{
+pc.addTrack(track,localStream);
+});
+
+pc.onicecandidate = e => {
+if(e.candidate){
+push(
+ref(db,`rooms/${ROOM}/signals/${userId}/${myId}/ice`),
+e.candidate.toJSON()
+);
+}
+};
+
+pc.ontrack = async e => {
+let audio = document.getElementById("audio_"+userId);
+
+if(!audio){
+audio = document.createElement("audio");
+audio.id = "audio_"+userId;
+audio.autoplay = true;
+audio.playsInline = true;
+audio.volume = 1;
+document.body.appendChild(audio);
+}
+
+audio.srcObject = e.streams[0];
+
+try{
+await audio.play();
+}catch(err){}
+};
+
+pc.onconnectionstatechange = () => {
+if(
+pc.connectionState === "failed" ||
+pc.connectionState === "disconnected" ||
+pc.connectionState === "closed"
+){
+delete peers[userId];
+}
+};
+
+if(isOfferer){
+const offer = await pc.createOffer();
+await pc.setLocalDescription(offer);
+
+await set(
+ref(db,`rooms/${ROOM}/signals/${myId}/${userId}/offer`),
+offer
+);
+}
+}
+
+function listenSignals(){
+
+onValue(ref(db,`rooms/${ROOM}/signals/${myId}`), async snap => {
+
+const data = snap.val() || {};
+
+for(const fromId in data){
+
+const packet = data[fromId];
+
+if(packet.offer){
+
+if(!peers[fromId]){
+await createPeer(fromId,false);
+}
+
+const pc = peers[fromId];
+
+if(!pc.currentRemoteDescription){
+await pc.setRemoteDescription(
+new RTCSessionDescription(packet.offer)
+);
+
+const answer = await pc.createAnswer();
+await pc.setLocalDescription(answer);
+
+await set(
+ref(db,`rooms/${ROOM}/signals/${fromId}/${myId}/answer`),
+answer
+);
+
+flushIce(fromId);
+}
+}
+
+if(packet.answer && peers[fromId]){
+
+const pc = peers[fromId];
+
+if(!pc.currentRemoteDescription){
+await pc.setRemoteDescription(
+new RTCSessionDescription(packet.answer)
+);
+
+flushIce(fromId);
+}
+}
+
+if(packet.ice){
+
+Object.values(packet.ice).forEach(c=>{
+handleIce(fromId,c);
+});
+
+remove(
+ref(db,`rooms/${ROOM}/signals/${myId}/${fromId}/ice`)
+);
+}
+}
+});
+}
+
+function handleIce(fromId,candidate){
+
+const pc = peers[fromId];
+
+if(pc && pc.remoteDescription){
+pc.addIceCandidate(
+new RTCIceCandidate(candidate)
+).catch(()=>{});
+}else{
+if(!pendingIce[fromId]) pendingIce[fromId] = [];
+pendingIce[fromId].push(candidate);
+}
+}
+
+function flushIce(userId){
+
+if(!pendingIce[userId]) return;
+
+pendingIce[userId].forEach(c=>{
+peers[userId].addIceCandidate(
+new RTCIceCandidate(c)
+).catch(()=>{});
+});
+
+pendingIce[userId] = [];
+}
+
+function setupChat(){
+
+const chatRef = ref(db,`rooms/${ROOM}/chat`);
+
+document.getElementById("send").onclick = () => {
+
+const input = document.getElementById("msg");
+const text = input.value.trim();
+
+if(!text) return;
+
+push(chatRef,{
+user: myName,
+msg: text,
+id: myId,
+ts: serverTimestamp()
+});
+
+input.value = "";
+};
+
+onChildAdded(chatRef,snap=>{
+
+const d = snap.val();
+
+const div = document.createElement("div");
+div.className = "mb-2 text-sm";
+
+div.innerHTML = `<b>${d.user}:</b> ${d.msg}`;
+
+const box = document.getElementById("messages");
+box.appendChild(div);
+box.scrollTop = 999999;
+});
+}
+
+function startTimer(){
+
+let sec = 0;
+
+setInterval(()=>{
+
+sec++;
+
+const m = String(Math.floor(sec/60)).padStart(2,"0");
+const s = String(sec%60).padStart(2,"0");
+
+document.getElementById("timer").textContent =
+m + ":" + s;
+
+},1000);
+}
+
+window.toggleChat = () => {
+document.getElementById("chat")
+.classList.toggle("hidden");
+};
 </script>
 </head>
+
 <body class="bg-slate-950 text-white min-h-screen flex items-center justify-center p-4">
-<div id="lobby" class="w-full max-w-sm bg-slate-900 rounded-3xl p-6 space-y-4">
-<h1 class="text-2xl font-bold">Call Direct</h1>
-<input id="uName" class="w-full p-4 rounded-2xl bg-slate-800" placeholder="Seu nome">
-<button onclick="joinPublic()" class="w-full p-4 rounded-2xl bg-blue-600 font-bold">Entrar</button>
+
+<div id="login" class="w-full max-w-sm bg-slate-900 p-6 rounded-3xl">
+<h1 class="text-2xl font-bold mb-4">Call Direct</h1>
+
+<input
+id="name"
+placeholder="Seu nome"
+class="w-full p-4 rounded-2xl bg-slate-800 mb-4 outline-none"
+/>
+
+<button
+onclick="joinRoom()"
+class="w-full p-4 rounded-2xl bg-blue-600 font-bold"
+>
+Entrar
+</button>
 </div>
-<div id="app" class="hidden w-full max-w-sm bg-slate-900 rounded-3xl p-6 relative">
-<div class="flex justify-between text-sm mb-6"><span id="status">0 online</span><span id="time">00:00</span></div>
-<div class="w-28 h-28 rounded-full bg-blue-600 mx-auto mb-6"></div>
-<button onclick="toggleChat()" class="w-full p-4 rounded-2xl bg-slate-800">Abrir Chat</button>
-<div id="chat" class="hidden absolute inset-0 bg-slate-900 rounded-3xl p-4 flex flex-col">
-<div class="flex justify-between mb-3"><b>Chat</b><button onclick="toggleChat()">X</button></div>
-<div id="msgs" class="flex-1 overflow-y-auto"></div>
-<div class="flex gap-2 mt-3"><input id="msg" class="flex-1 p-3 rounded-xl bg-slate-800"><button id="send" class="px-4 rounded-xl bg-blue-600">></button></div>
+
+<div id="app" class="hidden w-full max-w-sm bg-slate-900 p-6 rounded-3xl relative">
+
+<div class="flex justify-between mb-6 text-sm">
+<span id="online">0 online</span>
+<span id="timer">00:00</span>
+</div>
+
+<div class="w-28 h-28 bg-blue-600 rounded-full mx-auto mb-6"></div>
+
+<button
+onclick="toggleChat()"
+class="w-full p-4 rounded-2xl bg-slate-800"
+>
+Abrir Chat
+</button>
+
+<div
+id="chat"
+class="hidden absolute inset-0 bg-slate-900 rounded-3xl p-4 flex flex-col"
+>
+
+<div class="flex justify-between mb-4">
+<b>Chat</b>
+<button onclick="toggleChat()">X</button>
+</div>
+
+<div
+id="messages"
+class="flex-1 overflow-y-auto"
+></div>
+
+<div class="flex gap-2 mt-4">
+
+<input
+id="msg"
+class="flex-1 p-3 rounded-xl bg-slate-800 outline-none"
+/>
+
+<button
+id="send"
+class="px-4 bg-blue-600 rounded-xl"
+>
+>
+</button>
+
+</div>
 </div>
 </div>
 </body>
