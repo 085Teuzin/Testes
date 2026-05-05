@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>call direct</title>
+    <title>call direct live</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue, push, onChildAdded, remove, onDisconnect, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, onValue, push, onChildAdded, remove, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDthwqD0CGFwDov-zfO-Hx6TD_y3lHsnoc",
@@ -22,28 +22,14 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         
-        let roomName, roomPass, userName, myID = Math.random().toString(36).substring(7);
+        const roomName = "public_room";
+        let myID = Math.random().toString(36).substring(7);
+        let userName = "user_" + myID;
         let localStream, peers = {}, timerInterval;
         const servers = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
 
-        window.joinRoom = async () => {
-            userName = document.getElementById('uName').value.trim();
-            roomName = document.getElementById('rName').value.trim().toLowerCase();
-            roomPass = document.getElementById('rPass').value.trim();
-
-            if(!userName || !roomName || !roomPass) return;
-
-            document.getElementById('lobby').classList.add('hidden');
-            document.getElementById('app-interface').classList.remove('hidden');
-            document.getElementById('displayRoomName').innerText = `sala: ${roomName}`;
-
+        window.onload = () => {
             initCall();
-        };
-
-        window.leaveRoom = async () => {
-            if (localStream) localStream.getTracks().forEach(t => t.stop());
-            await remove(ref(db, `global_rooms/${roomName}/users/${myID}`));
-            location.reload();
         };
 
         async function initCall() {
@@ -70,7 +56,7 @@
                 setupSignaling();
                 setupChat();
             } catch (e) {
-                document.getElementById('statusText').innerText = "erro de acesso";
+                console.error(e);
             }
         }
 
@@ -93,7 +79,7 @@
 
             pc.onicecandidate = (e) => {
                 if (e.candidate) {
-                    push(ref(db, `global_rooms/${roomName}/signals/${userID}/${myID}/ice`), e.candidate.toJSON());
+                    set(ref(db, `global_rooms/${roomName}/signals/${userID}/${myID}/ice/${Math.random().toString(36).substring(7)}`), e.candidate.toJSON());
                 }
             };
 
@@ -110,24 +96,28 @@
         function setupSignaling() {
             onValue(ref(db, `global_rooms/${roomName}/signals`), (snap) => {
                 const signals = snap.val() || {};
-                Object.keys(signals).forEach(fromID => {
-                    if (signals[fromID][myID]?.offer && !peers[fromID]) {
-                        const pc = setupPeer(fromID, false);
-                        pc.setRemoteDescription(new RTCSessionDescription(signals[fromID][myID].offer));
-                        pc.createAnswer().then(answer => {
-                            pc.setLocalDescription(answer);
-                            set(ref(db, `global_rooms/${roomName}/signals/${myID}/${fromID}/answer`), { sdp: answer.sdp, type: answer.type });
-                        });
-                    }
-                    
-                    if (signals[fromID][myID]?.answer && peers[fromID]) {
-                        peers[fromID].setRemoteDescription(new RTCSessionDescription(signals[fromID][myID].answer));
-                    }
-
-                    if (signals[myID] && signals[myID][fromID]?.ice) {
-                        // lida com ice candidatos aqui se necessário
-                    }
-                });
+                
+                if (signals[myID]) {
+                    Object.keys(signals[myID]).forEach(fromID => {
+                        const data = signals[myID][fromID];
+                        if (data.offer && !peers[fromID]) {
+                            const pc = setupPeer(fromID, false);
+                            pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+                            pc.createAnswer().then(answer => {
+                                pc.setLocalDescription(answer);
+                                set(ref(db, `global_rooms/${roomName}/signals/${fromID}/${myID}/answer`), { sdp: answer.sdp, type: answer.type });
+                            });
+                        }
+                        if (data.answer && peers[fromID]) {
+                            peers[fromID].setRemoteDescription(new RTCSessionDescription(data.answer));
+                        }
+                        if (data.ice && peers[fromID]) {
+                            Object.values(data.ice).forEach(candidate => {
+                                peers[fromID].addIceCandidate(new RTCIceCandidate(candidate)).catch(e => {});
+                            });
+                        }
+                    });
+                }
             });
         }
 
@@ -148,7 +138,7 @@
 
                 const div = document.createElement('div');
                 div.className = `p-3 rounded-2xl text-[11px] mb-2 shadow-sm w-fit max-w-[85%] break-all ${data.user === userName ? 'bg-blue-600 ml-auto rounded-tr-none' : 'bg-slate-800 rounded-tl-none'}`;
-                div.innerHTML = `<span class="block text-[8px] opacity-60 mb-1">${data.user.toLowerCase()}</span>${decrypted.toLowerCase()}`;
+                div.innerHTML = `<span class="block text-[8px] opacity-60 mb-1">${data.user}</span>${decrypted}`;
                 document.getElementById('chatMessages').appendChild(div);
                 document.getElementById('chatMessages').scrollTop = 9999;
             });
@@ -156,7 +146,7 @@
 
         function updateParticipantsList(users) {
             const list = Object.values(users);
-            document.getElementById('statusText').innerText = `${list.length}/5 online na sala`;
+            document.getElementById('statusText').innerText = `${list.length} conectados agora`;
             if(list.length >= 2) startTimer();
         }
 
@@ -191,37 +181,24 @@
         body { background: #020617; color: #f8fafc; font-family: sans-serif; overflow: hidden; height: 100vh; width: 100vw; }
         .glass { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); }
         .safe-card { width: 92%; max-width: 380px; height: auto; max-height: 90vh; }
-        input::placeholder { color: #475569; text-transform: lowercase; }
         * { text-transform: lowercase; }
     </style>
 </head>
 <body class="flex items-center justify-center p-4">
 
-    <div id="lobby" class="glass safe-card rounded-[2.5rem] p-8 shadow-2xl flex flex-col">
-        <h2 class="text-xl font-black mb-8 text-center text-blue-500 tracking-tighter">call direct <span class="text-[10px] text-white opacity-30 tracking-widest">global</span></h2>
-        <div class="space-y-4">
-            <input id="uName" type="text" placeholder="seu nome" class="w-full bg-slate-900 border border-slate-800 rounded-2xl px-5 py-4 text-sm outline-none focus:border-blue-600 transition-colors">
-            <input id="rName" type="text" placeholder="nome da sala" class="w-full bg-slate-900 border border-slate-800 rounded-2xl px-5 py-4 text-sm outline-none focus:border-blue-600 transition-colors">
-            <input id="rPass" type="password" placeholder="senha da sala" class="w-full bg-slate-900 border border-slate-800 rounded-2xl px-5 py-4 text-sm outline-none focus:border-blue-600 transition-colors">
-            <button onclick="joinRoom()" class="w-full py-5 bg-blue-600 rounded-2xl font-bold text-sm shadow-xl active:scale-95 transition-transform mt-4">entrar na sala</button>
-        </div>
-        <p class="mt-8 text-center text-[9px] text-slate-600 font-bold tracking-[0.3em]">made by: @085_teuzinnn</p>
-    </div>
-
-    <div id="app-interface" class="hidden glass safe-card relative rounded-[2.5rem] p-8 flex flex-col items-center shadow-2xl">
+    <div id="app-interface" class="glass safe-card relative rounded-[2.5rem] p-8 flex flex-col items-center shadow-2xl">
         <div class="absolute top-8 left-8 flex flex-col">
-            <span id="displayRoomName" class="text-[10px] font-black text-blue-500 tracking-widest">sala</span>
-            <span id="statusText" class="text-[9px] text-slate-500 font-bold">conectando...</span>
+            <span class="text-[10px] font-black text-blue-500 tracking-widest">ao vivo</span>
+            <span id="statusText" class="text-[9px] text-slate-500 font-bold">iniciando áudio...</span>
             <span id="callTimer" class="text-[10px] font-mono text-slate-400 mt-0.5">00:00</span>
         </div>
 
-        <div id="userIcon" class="w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-full flex items-center justify-center mb-10 mt-10 shadow-2xl shadow-blue-900/20">
+        <div id="userIcon" class="w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-full flex items-center justify-center mb-10 mt-10 shadow-2xl shadow-blue-900/20 transition-transform duration-75">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
         </div>
 
-        <div class="grid grid-cols-2 gap-4 w-full mb-8">
-            <button onclick="leaveRoom()" class="p-5 rounded-2xl bg-red-600/10 text-red-500 font-black text-[10px] tracking-widest border border-red-600/20">sair da sala</button>
-            <button onclick="toggleChat()" class="p-5 rounded-2xl bg-slate-800 text-slate-200 font-black text-[10px] tracking-widest">chat</button>
+        <div class="w-full mb-8">
+            <button onclick="toggleChat()" class="w-full p-5 rounded-2xl bg-slate-800 text-slate-200 font-black text-[10px] tracking-widest active:scale-95 transition-transform">abrir chat</button>
         </div>
 
         <div id="chatContainer" class="hidden absolute inset-0 glass rounded-[2.5rem] p-6 flex flex-col z-20">
@@ -231,12 +208,12 @@
             </div>
             <div id="chatMessages" class="flex-1 overflow-y-auto mb-4 space-y-3 pr-1 scrollbar-hide"></div>
             <div class="flex gap-2 bg-slate-900/50 p-1.5 rounded-2xl border border-white/5">
-                <input id="chatInput" type="text" placeholder="mensagem..." class="flex-1 bg-transparent rounded-xl px-4 py-2 text-xs outline-none">
+                <input id="chatInput" type="text" placeholder="digite algo..." class="flex-1 bg-transparent rounded-xl px-4 py-2 text-xs outline-none">
                 <button id="sendMsg" class="bg-blue-600 w-10 h-10 flex items-center justify-center rounded-xl">➤</button>
             </div>
         </div>
 
-        <p class="text-slate-700 text-[10px] font-black tracking-widest">made by: @085_teuzinnn</p>
+        <p class="text-slate-700 text-[10px] font-black tracking-widest uppercase">public global room</p>
     </div>
 
 </body>
