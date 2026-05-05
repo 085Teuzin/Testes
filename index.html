@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Call Direct - Public</title>
+    <title>Call Direct - Live</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module">
@@ -69,7 +69,7 @@
                 setupSignaling();
                 setupChat();
             } catch (e) {
-                alert("erro ao acessar microfone: " + e.message);
+                alert("permita o microfone para falar!");
             }
         }
 
@@ -91,13 +91,17 @@
                     audio = document.createElement('audio');
                     audio.id = `audio_${userID}`;
                     audio.autoplay = true;
+                    audio.setAttribute('playsinline', 'true');
                     document.body.appendChild(audio);
                 }
                 audio.srcObject = e.streams[0];
+                audio.play().catch(() => {
+                    console.log("auto-play bloqueado, aguardando interação");
+                });
             };
 
             if (isOffer) {
-                pc.createOffer().then(offer => {
+                pc.createOffer({ offerToReceiveAudio: true }).then(offer => {
                     pc.setLocalDescription(offer);
                     set(ref(db, `global_rooms/${roomName}/signals/${myID}/${userID}/offer`), { sdp: offer.sdp, type: offer.type });
                 });
@@ -108,21 +112,21 @@
             onValue(ref(db, `global_rooms/${roomName}/signals/${myID}`), (snap) => {
                 const signals = snap.val() || {};
                 Object.keys(signals).forEach(fromID => {
-                    const { offer, answer, ice } = signals[fromID];
+                    const data = signals[fromID];
                     
-                    if (offer && !peers[fromID]) {
+                    if (data.offer && !peers[fromID]) {
                         createPeerConnection(fromID, false);
-                        peers[fromID].setRemoteDescription(new RTCSessionDescription(offer));
+                        peers[fromID].setRemoteDescription(new RTCSessionDescription(data.offer));
                         peers[fromID].createAnswer().then(ans => {
                             peers[fromID].setLocalDescription(ans);
                             set(ref(db, `global_rooms/${roomName}/signals/${fromID}/${myID}/answer`), { sdp: ans.sdp, type: ans.type });
                         });
                     }
-                    if (answer && peers[fromID]) {
-                        peers[fromID].setRemoteDescription(new RTCSessionDescription(answer));
+                    if (data.answer && peers[fromID]) {
+                        peers[fromID].setRemoteDescription(new RTCSessionDescription(data.answer));
                     }
-                    if (ice) {
-                        Object.values(ice).forEach(candidate => {
+                    if (data.ice && peers[fromID]) {
+                        Object.values(data.ice).forEach(candidate => {
                             peers[fromID].addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
                         });
                         remove(ref(db, `global_rooms/${roomName}/signals/${myID}/${fromID}/ice`));
@@ -145,13 +149,11 @@
                 const data = snap.val();
                 let msg = "";
                 try { msg = decodeURIComponent(escape(atob(data.msg))); } catch(e) { msg = data.msg; }
-
                 if (!userColors[data.id]) userColors[data.id] = getRandomColor();
 
                 const isMe = data.id === myID;
                 const div = document.createElement('div');
                 div.className = `flex flex-col mb-4 ${isMe ? 'items-end' : 'items-start'}`;
-                
                 div.innerHTML = `
                     <span class="text-[9px] font-bold mb-1 px-2" style="color: ${userColors[data.id]}">${data.user}</span>
                     <div class="p-3 rounded-2xl text-[12px] shadow-sm max-w-[85%] break-all ${isMe ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-800 text-slate-200 rounded-tl-none'}">
@@ -190,9 +192,9 @@
         body { background: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; width: 100vw; }
         .glass { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.05); }
         .safe-card { width: 92%; max-width: 380px; height: auto; max-height: 90vh; }
-        input::placeholder { color: #475569; }
         .font-mono-timer { font-family: 'JetBrains Mono', monospace; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
+        * { text-transform: lowercase; }
     </style>
 </head>
 <body class="flex items-center justify-center p-4">
@@ -236,7 +238,7 @@
             </div>
         </div>
 
-        <p class="mt-8 text-slate-700 text-[10px] font-black tracking-[0.3em] uppercase">@085_teuzinnn</p>
+        <p class="mt-8 text-slate-700 text-[10px] font-black tracking-[0.3em]">Made By: @085_teuzinnn</p>
     </div>
 
 </body>
