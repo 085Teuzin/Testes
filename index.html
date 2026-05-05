@@ -1,394 +1,264 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>Call Direct - Made By: @085_Teuzinnn</title>
-<script src="https://cdn.tailwindcss.com"></script>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-getDatabase,
-ref,
-set,
-push,
-onValue,
-onChildAdded,
-remove,
-onDisconnect,
-serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDthwqD0CGFwDov-zfO-Hx6TD_y3lHsnoc",
-  authDomain: "teuzin-apps.firebaseapp.com",
-  databaseURL: "https://teuzin-apps-default-rtdb.firebaseio.com",
-  projectId: "teuzin-apps",
-  storageBucket: "teuzin-apps.firebasestorage.app",
-  messagingSenderId: "695505471506",
-  appId: "1:695505471506:web:efe322e605af4a30bfb0cb"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-const ROOM = "public";
-const myId = crypto.randomUUID();
-
-let myName = "";
-let localStream = null;
-let peers = {};
-let pendingIce = {};
-
-const rtcConfig = {
-iceServers: [
-{ urls: "stun:stun.l.google.com:19302" }
-]
-};
-
-window.addEventListener("load", () => {
-const saved = localStorage.getItem("cd_name");
-if(saved) document.getElementById("name").value = saved;
-});
-
-window.joinRoom = async () => {
-myName = document.getElementById("name").value.trim();
-if(!myName) return alert("Digite seu nome");
-
-localStorage.setItem("cd_name", myName);
-
-await unlockAudio();
-
-localStream = await navigator.mediaDevices.getUserMedia({
-audio: {
-echoCancellation: true,
-noiseSuppression: true,
-autoGainControl: true
-}
-});
-
-document.getElementById("login").classList.add("hidden");
-document.getElementById("app").classList.remove("hidden");
-
-registerPresence();
-listenUsers();
-listenSignals();
-setupChat();
-startTimer();
-};
-
-async function unlockAudio(){
-try{
-const ctx = new AudioContext();
-await ctx.resume();
-}catch(e){}
-}
-
-function registerPresence(){
-const userRef = ref(db, `rooms/${ROOM}/users/${myId}`);
-
-set(userRef,{
-id: myId,
-name: myName,
-online: true
-});
-
-onDisconnect(userRef).remove();
-}
-
-function listenUsers(){
-onValue(ref(db, `rooms/${ROOM}/users`), snap => {
-const users = snap.val() || {};
-const ids = Object.keys(users);
-
-document.getElementById("online").textContent =
-ids.length + " online";
-
-ids.forEach(id => {
-if(id === myId) return;
-if(peers[id]) return;
-
-setTimeout(() => {
-createPeer(id,true);
-},500);
-});
-});
-}
-
-async function createPeer(userId,isOfferer){
-
-const pc = new RTCPeerConnection(rtcConfig);
-peers[userId] = pc;
-
-localStream.getTracks().forEach(track=>{
-pc.addTrack(track,localStream);
-});
-
-pc.onicecandidate = e => {
-if(e.candidate){
-push(
-ref(db,`rooms/${ROOM}/signals/${userId}/${myId}/ice`),
-e.candidate.toJSON()
-);
-}
-};
-
-pc.ontrack = async e => {
-let audio = document.getElementById("audio_"+userId);
-
-if(!audio){
-audio = document.createElement("audio");
-audio.id = "audio_"+userId;
-audio.autoplay = true;
-audio.playsInline = true;
-audio.volume = 1;
-document.body.appendChild(audio);
-}
-
-audio.srcObject = e.streams[0];
-
-try{
-await audio.play();
-}catch(err){}
-};
-
-pc.onconnectionstatechange = () => {
-if(
-pc.connectionState === "failed" ||
-pc.connectionState === "disconnected" ||
-pc.connectionState === "closed"
-){
-delete peers[userId];
-}
-};
-
-if(isOfferer){
-const offer = await pc.createOffer();
-await pc.setLocalDescription(offer);
-
-await set(
-ref(db,`rooms/${ROOM}/signals/${myId}/${userId}/offer`),
-offer
-);
-}
-}
-
-function listenSignals(){
-
-onValue(ref(db,`rooms/${ROOM}/signals/${myId}`), async snap => {
-
-const data = snap.val() || {};
-
-for(const fromId in data){
-
-const packet = data[fromId];
-
-if(packet.offer){
-
-if(!peers[fromId]){
-await createPeer(fromId,false);
-}
-
-const pc = peers[fromId];
-
-if(!pc.currentRemoteDescription){
-await pc.setRemoteDescription(
-new RTCSessionDescription(packet.offer)
-);
-
-const answer = await pc.createAnswer();
-await pc.setLocalDescription(answer);
-
-await set(
-ref(db,`rooms/${ROOM}/signals/${fromId}/${myId}/answer`),
-answer
-);
-
-flushIce(fromId);
-}
-}
-
-if(packet.answer && peers[fromId]){
-
-const pc = peers[fromId];
-
-if(!pc.currentRemoteDescription){
-await pc.setRemoteDescription(
-new RTCSessionDescription(packet.answer)
-);
-
-flushIce(fromId);
-}
-}
-
-if(packet.ice){
-
-Object.values(packet.ice).forEach(c=>{
-handleIce(fromId,c);
-});
-
-remove(
-ref(db,`rooms/${ROOM}/signals/${myId}/${fromId}/ice`)
-);
-}
-}
-});
-}
-
-function handleIce(fromId,candidate){
-
-const pc = peers[fromId];
-
-if(pc && pc.remoteDescription){
-pc.addIceCandidate(
-new RTCIceCandidate(candidate)
-).catch(()=>{});
-}else{
-if(!pendingIce[fromId]) pendingIce[fromId] = [];
-pendingIce[fromId].push(candidate);
-}
-}
-
-function flushIce(userId){
-
-if(!pendingIce[userId]) return;
-
-pendingIce[userId].forEach(c=>{
-peers[userId].addIceCandidate(
-new RTCIceCandidate(c)
-).catch(()=>{});
-});
-
-pendingIce[userId] = [];
-}
-
-function setupChat(){
-
-const chatRef = ref(db,`rooms/${ROOM}/chat`);
-
-document.getElementById("send").onclick = () => {
-
-const input = document.getElementById("msg");
-const text = input.value.trim();
-
-if(!text) return;
-
-push(chatRef,{
-user: myName,
-msg: text,
-id: myId,
-ts: serverTimestamp()
-});
-
-input.value = "";
-};
-
-onChildAdded(chatRef,snap=>{
-
-const d = snap.val();
-
-const div = document.createElement("div");
-div.className = "mb-2 text-sm";
-
-div.innerHTML = `<b>${d.user}:</b> ${d.msg}`;
-
-const box = document.getElementById("messages");
-box.appendChild(div);
-box.scrollTop = 999999;
-});
-}
-
-function startTimer(){
-
-let sec = 0;
-
-setInterval(()=>{
-
-sec++;
-
-const m = String(Math.floor(sec/60)).padStart(2,"0");
-const s = String(sec%60).padStart(2,"0");
-
-document.getElementById("timer").textContent =
-m + ":" + s;
-
-},1000);
-}
-
-window.toggleChat = () => {
-document.getElementById("chat")
-.classList.toggle("hidden");
-};
-</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>​Sinfonia de Estantes - By: @085_Teuzinnn</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --leather: #3d1c10;
+            --paper: #f4e4bc;
+            --ink: #2b2b2b;
+            --gold: #c5a059;
+            --gold-dark: #8a6d3b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: #121212;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: 'Crimson Pro', serif;
+        }
+
+        .safe-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            padding: calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .book-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 600px;
+            max-height: 1000px;
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .cover, .back-cover {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: var(--leather) url('https://www.transparenttextures.com/patterns/leather.png');
+            border-radius: 4px 12px 12px 4px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+            z-index: 10;
+            transition: transform 1.2s cubic-bezier(0.6, 0, 0.4, 1);
+            transform-origin: left;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .back-cover {
+            z-index: 1;
+            transform: rotateY(0deg);
+        }
+
+        .cover-border {
+            width: 88%;
+            height: 92%;
+            border: 1px solid var(--gold);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .corner { position: absolute; color: var(--gold); font-size: 1.2rem; }
+        .tl { top: 10px; left: 10px; }
+        .tr { top: 10px; right: 10px; transform: rotate(90deg); }
+        .bl { bottom: 10px; left: 10px; transform: rotate(-90deg); }
+        .br { bottom: 10px; right: 10px; transform: rotate(180deg); }
+
+        .cover h1 {
+            font-family: 'UnifrakturMaguntia', cursive;
+            color: var(--gold);
+            font-size: clamp(2.2rem, 10vw, 3.5rem);
+            text-align: center;
+        }
+
+        .divider {
+            width: 50%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 20px 0;
+        }
+
+        .page {
+            position: absolute;
+            width: 99%;
+            height: 99%;
+            background: var(--paper) url('https://www.transparenttextures.com/patterns/parchment.png');
+            padding: 40px 25px;
+            border-radius: 0 10px 10px 0;
+            box-shadow: inset 25px 0 50px rgba(0,0,0,0.25);
+            color: var(--ink);
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            transform-origin: left;
+            visibility: hidden;
+        }
+
+        .book-container.open .page { visibility: visible; }
+        .book-container.open .cover { transform: rotateY(-165deg); }
+        .book-container.at-back .page { visibility: hidden; }
+
+        #content { overflow-y: auto; flex: 1; }
+        h2 { font-family: 'UnifrakturMaguntia', cursive; text-align: center; margin-bottom: 20px; font-size: 1.8rem; color: #4a2c1d; }
+        p { margin-bottom: 18px; text-align: justify; line-height: 1.8; font-size: 1.2rem; }
+
+        .credits-list { list-style: none; text-align: center; color: var(--gold); font-family: serif; }
+        .credits-list li { margin: 15px 0; letter-spacing: 1px; }
+        .credits-list b { display: block; font-size: 0.7rem; color: var(--gold-dark); text-transform: uppercase; margin-bottom: 5px; }
+
+        .page-flip { animation: flipEffect 0.5s ease-in-out; }
+        @keyframes flipEffect { 0% { opacity: 0.8; transform: translateX(5px); } 100% { opacity: 1; transform: translateX(0); } }
+
+        #pg-indicator { text-align: center; font-size: 0.8rem; margin-top: 10px; opacity: 0.4; }
+    </style>
 </head>
+<body>
 
-<body class="bg-slate-950 text-white min-h-screen flex items-center justify-center p-4">
+    <audio id="snd-cover" src="grosso.mp3" preload="auto"></audio>
+    <audio id="snd-page" src="folhando.mp3" preload="auto"></audio>
 
-<div id="login" class="w-full max-w-sm bg-slate-900 p-6 rounded-3xl">
-<h1 class="text-2xl font-bold mb-4">Call Direct</h1>
+    <div class="safe-wrapper">
+        <div class="book-container" id="book">
+            
+            <div class="back-cover" id="backCover">
+                <div class="cover-border">
+                    <div class="corner tl">✦</div><div class="corner tr">✦</div>
+                    <div class="corner bl">✦</div><div class="corner br">✦</div>
+                    <h2 style="color: var(--gold); border: none;">Créditos</h2>
+                    <div class="divider"></div>
+                    <ul class="credits-list">
+                        <li><b>Autor & Roteiro</b> @085_Teuzinnn</li>
+                        <li><b>Desenvolvimento</b> Gemini AI</li>
+                        <li><b>Interface</b> HTML5 / CSS3 / JS</li>
+                        <li><b>Localização</b> Brasil</li>
+                    </ul>
+                    <p style="color: var(--gold-dark); font-size: 0.6rem; margin-top: 40px;">© 2026 ​Sinfonia de Estantes<br>All Rights Reserved</p>
+                </div>
+            </div>
 
-<input
-id="name"
-placeholder="Seu nome"
-class="w-full p-4 rounded-2xl bg-slate-800 mb-4 outline-none"
-/>
+            <div class="page" id="pageLayer">
+                <div id="content"></div>
+                <div id="pg-indicator"></div>
+            </div>
 
-<button
-onclick="joinRoom()"
-class="w-full p-4 rounded-2xl bg-blue-600 font-bold"
->
-Entrar
-</button>
-</div>
+            <div class="cover" id="frontCover">
+                <div class="cover-border">
+                    <div class="corner tl">✦</div><div class="corner tr">✦</div>
+                    <div class="corner bl">✦</div><div class="corner br">✦</div>
+                    <h1>​Sinfonia de Estantes</h1>
+                    <div class="divider"></div>
+                    <p style="color: var(--gold); letter-spacing: 5px; font-size: 0.8rem;">LIVRO ORIGINAL</p>
+                </div>
+            </div>
 
-<div id="app" class="hidden w-full max-w-sm bg-slate-900 p-6 rounded-3xl relative">
+        </div>
+    </div>
 
-<div class="flex justify-between mb-6 text-sm">
-<span id="online">0 online</span>
-<span id="timer">00:00</span>
-</div>
+    <script src="capitulos.js"></script>
 
-<div class="w-28 h-28 bg-blue-600 rounded-full mx-auto mb-6"></div>
+    <script>
+        let currentIndex = 0;
+        let pages = [];
+        let touchStartX = 0;
+        let touchEndX = 0;
+        const book = document.getElementById('book');
+        const content = document.getElementById('content');
+        const sndCover = document.getElementById('snd-cover');
+        const sndPage = document.getElementById('snd-page');
 
-<button
-onclick="toggleChat()"
-class="w-full p-4 rounded-2xl bg-slate-800"
->
-Abrir Chat
-</button>
+        function playSnd(type) {
+            const s = type === 'cover' ? sndCover : sndPage;
+            s.currentTime = 0;
+            s.play().catch(()=>{});
+        }
 
-<div
-id="chat"
-class="hidden absolute inset-0 bg-slate-900 rounded-3xl p-4 flex flex-col"
->
+        function init() {
+            if (typeof rawText !== 'undefined') {
+                pages = rawText.split('___').map(p => p.trim()).filter(p => p.length > 0);
+                render();
+            }
+        }
 
-<div class="flex justify-between mb-4">
-<b>Chat</b>
-<button onclick="toggleChat()">X</button>
-</div>
+        function render() {
+            content.classList.remove('page-flip');
+            void content.offsetWidth;
+            content.classList.add('page-flip');
+            content.innerHTML = pages[currentIndex];
+            document.getElementById('pg-indicator').innerText = `Página ${currentIndex + 1} de ${pages.length}`;
+            content.scrollTop = 0;
+        }
 
-<div
-id="messages"
-class="flex-1 overflow-y-auto"
-></div>
+        function handleSwipe() {
+            const threshold = 50;
+            const swipeL = touchStartX - touchEndX > threshold;
+            const swipeR = touchEndX - touchStartX > threshold;
 
-<div class="flex gap-2 mt-4">
+            if (!book.classList.contains('open')) {
+                if (swipeL) {
+                    book.classList.add('open');
+                    book.classList.remove('at-back');
+                    currentIndex = 0;
+                    render();
+                    playSnd('cover');
+                }
+            } else if (book.classList.contains('at-back')) {
+                if (swipeR) {
+                    book.classList.remove('at-back');
+                    currentIndex = pages.length - 1;
+                    render();
+                    playSnd('page');
+                } else if (swipeL) {
+                    book.classList.remove('open');
+                    book.classList.remove('at-back');
+                    playSnd('cover');
+                }
+            } else {
+                if (swipeL) {
+                    if (currentIndex < pages.length - 1) {
+                        currentIndex++;
+                        render();
+                        playSnd('page');
+                    } else {
+                        book.classList.add('at-back');
+                        playSnd('page');
+                    }
+                } else if (swipeR) {
+                    if (currentIndex > 0) {
+                        currentIndex--;
+                        render();
+                        playSnd('page');
+                    } else {
+                        book.classList.remove('open');
+                        playSnd('cover');
+                    }
+                }
+            }
+        }
 
-<input
-id="msg"
-class="flex-1 p-3 rounded-xl bg-slate-800 outline-none"
-/>
-
-<button
-id="send"
-class="px-4 bg-blue-600 rounded-xl"
->
->
-</button>
-
-</div>
-</div>
-</div>
+        document.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; });
+        document.addEventListener('touchend', e => { touchEndX = e.changedTouches[0].screenX; handleSwipe(); });
+        window.onload = init;
+    </script>
 </body>
 </html>
