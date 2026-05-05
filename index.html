@@ -1,245 +1,42 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+<!DOCTYPE html><html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Call Direct - Live</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue, push, onChildAdded, remove, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyDthwqD0CGFwDov-zfO-Hx6TD_y3lHsnoc",
-            authDomain: "teuzin-apps.firebaseapp.com",
-            databaseURL: "https://teuzin-apps-default-rtdb.firebaseio.com",
-            projectId: "teuzin-apps",
-            storageBucket: "teuzin-apps.firebasestorage.app",
-            messagingSenderId: "695505471506",
-            appId: "1:695505471506:web:efe322e605af4a30bfb0cb"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        
-        const roomName = "public_room";
-        let myID = Math.random().toString(36).substring(7);
-        let userName = "";
-        let localStream, peers = {};
-        const servers = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
-        const userColors = {};
-
-        const getRandomColor = () => {
-            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
-            return colors[Math.floor(Math.random() * colors.length)];
-        };
-
-        window.joinPublic = async () => {
-            const inputName = document.getElementById('uName').value.trim();
-            if(!inputName) return alert("digite seu nome");
-            userName = inputName;
-
-            document.getElementById('lobby').classList.add('hidden');
-            document.getElementById('app-interface').classList.remove('hidden');
-            
-            initCall();
-        };
-
-        async function initCall() {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                setupAudioVisualizer(localStream);
-                
-                const presenceRef = ref(db, `global_rooms/${roomName}/users/${myID}`);
-                set(presenceRef, { name: userName, id: myID });
-                onDisconnect(presenceRef).remove();
-
-                onValue(ref(db, `global_rooms/${roomName}/users`), (snap) => {
-                    const users = snap.val() || {};
-                    document.getElementById('statusText').innerText = `${Object.keys(users).length} online`;
-                    
-                    Object.keys(users).forEach(userID => {
-                        if (userID !== myID && !peers[userID]) {
-                            createPeerConnection(userID, true);
-                        }
-                    });
-                });
-
-                setupSignaling();
-                setupChat();
-            } catch (e) {
-                alert("permita o microfone para falar!");
-            }
-        }
-
-        function createPeerConnection(userID, isOffer) {
-            const pc = new RTCPeerConnection(servers);
-            peers[userID] = pc;
-
-            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-
-            pc.onicecandidate = (e) => {
-                if (e.candidate) {
-                    push(ref(db, `global_rooms/${roomName}/signals/${userID}/${myID}/ice`), e.candidate.toJSON());
-                }
-            };
-
-            pc.ontrack = (e) => {
-                let audio = document.getElementById(`audio_${userID}`);
-                if (!audio) {
-                    audio = document.createElement('audio');
-                    audio.id = `audio_${userID}`;
-                    audio.autoplay = true;
-                    audio.setAttribute('playsinline', 'true');
-                    document.body.appendChild(audio);
-                }
-                audio.srcObject = e.streams[0];
-                audio.play().catch(() => {
-                    console.log("auto-play bloqueado, aguardando interação");
-                });
-            };
-
-            if (isOffer) {
-                pc.createOffer({ offerToReceiveAudio: true }).then(offer => {
-                    pc.setLocalDescription(offer);
-                    set(ref(db, `global_rooms/${roomName}/signals/${myID}/${userID}/offer`), { sdp: offer.sdp, type: offer.type });
-                });
-            }
-        }
-
-        function setupSignaling() {
-            onValue(ref(db, `global_rooms/${roomName}/signals/${myID}`), (snap) => {
-                const signals = snap.val() || {};
-                Object.keys(signals).forEach(fromID => {
-                    const data = signals[fromID];
-                    
-                    if (data.offer && !peers[fromID]) {
-                        createPeerConnection(fromID, false);
-                        peers[fromID].setRemoteDescription(new RTCSessionDescription(data.offer));
-                        peers[fromID].createAnswer().then(ans => {
-                            peers[fromID].setLocalDescription(ans);
-                            set(ref(db, `global_rooms/${roomName}/signals/${fromID}/${myID}/answer`), { sdp: ans.sdp, type: ans.type });
-                        });
-                    }
-                    if (data.answer && peers[fromID]) {
-                        peers[fromID].setRemoteDescription(new RTCSessionDescription(data.answer));
-                    }
-                    if (data.ice && peers[fromID]) {
-                        Object.values(data.ice).forEach(candidate => {
-                            peers[fromID].addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
-                        });
-                        remove(ref(db, `global_rooms/${roomName}/signals/${myID}/${fromID}/ice`));
-                    }
-                });
-            });
-        }
-
-        function setupChat() {
-            const chatRef = ref(db, `global_rooms/${roomName}/chat`);
-            document.getElementById('sendMsg').onclick = () => {
-                const input = document.getElementById('chatInput');
-                if (input.value.trim()) {
-                    push(chatRef, { user: userName, id: myID, msg: btoa(unescape(encodeURIComponent(input.value))), ts: serverTimestamp() });
-                    input.value = "";
-                }
-            };
-
-            onChildAdded(chatRef, (snap) => {
-                const data = snap.val();
-                let msg = "";
-                try { msg = decodeURIComponent(escape(atob(data.msg))); } catch(e) { msg = data.msg; }
-                if (!userColors[data.id]) userColors[data.id] = getRandomColor();
-
-                const isMe = data.id === myID;
-                const div = document.createElement('div');
-                div.className = `flex flex-col mb-4 ${isMe ? 'items-end' : 'items-start'}`;
-                div.innerHTML = `
-                    <span class="text-[9px] font-bold mb-1 px-2" style="color: ${userColors[data.id]}">${data.user}</span>
-                    <div class="p-3 rounded-2xl text-[12px] shadow-sm max-w-[85%] break-all ${isMe ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-800 text-slate-200 rounded-tl-none'}">
-                        ${msg}
-                    </div>
-                `;
-                document.getElementById('chatMessages').appendChild(div);
-                document.getElementById('chatMessages').scrollTop = 99999;
-            });
-        }
-
-        function setupAudioVisualizer(stream) {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const src = ctx.createMediaStreamSource(stream);
-            const ans = ctx.createAnalyser();
-            ans.fftSize = 64;
-            src.connect(ans);
-            const data = new Uint8Array(ans.frequencyBinCount);
-            const render = () => {
-                requestAnimationFrame(render);
-                ans.getByteFrequencyData(data);
-                const avg = data.reduce((a,b) => a+b)/data.length;
-                document.getElementById('userIcon').style.transform = `scale(${1 + avg/150})`;
-            };
-            render();
-            let s = 0;
-            setInterval(() => {
-                s++;
-                document.getElementById('callTimer').innerText = `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
-            }, 1000);
-        }
-
-        window.toggleChat = () => document.getElementById('chatContainer').classList.toggle('hidden');
-    </script>
-    <style>
-        body { background: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; width: 100vw; }
-        .glass { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.05); }
-        .safe-card { width: 92%; max-width: 380px; height: auto; max-height: 90vh; }
-        .font-mono-timer { font-family: 'JetBrains Mono', monospace; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        * { text-transform: lowercase; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Call Direct Live</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getDatabase, ref, set, onValue, push, onChildAdded, remove, onDisconnect, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+const firebaseConfig={apiKey:'AIzaSyDthwqD0CGFwDov-zfO-Hx6TD_y3lHsnoc',authDomain:'teuzin-apps.firebaseapp.com',databaseURL:'https://teuzin-apps-default-rtdb.firebaseio.com',projectId:'teuzin-apps',storageBucket:'teuzin-apps.firebasestorage.app',messagingSenderId:'695505471506',appId:'1:695505471506:web:efe322e605af4a30bfb0cb'};
+const app=initializeApp(firebaseConfig); const db=getDatabase(app);
+const room='public_room'; const myID=Math.random().toString(36).slice(2); let userName=''; let localStream; let peers={}; let pendingIce={}; const servers={iceServers:[{urls:['stun:stun.l.google.com:19302']}]};
+window.addEventListener('load',()=>{const n=localStorage.getItem('cd_name'); if(n) document.getElementById('uName').value=n;});
+window.joinPublic=async()=>{userName=document.getElementById('uName').value.trim(); if(!userName)return; localStorage.setItem('cd_name',userName); document.getElementById('lobby').classList.add('hidden'); document.getElementById('app').classList.remove('hidden'); await init();};
+async function init(){await unlockAudio(); localStream=await navigator.mediaDevices.getUserMedia({audio:true}); const me=ref(db,`rooms/${room}/users/${myID}`); await set(me,{name:userName,id:myID}); onDisconnect(me).remove(); onValue(ref(db,`rooms/${room}/users`),snap=>{const users=snap.val()||{}; document.getElementById('status').textContent=Object.keys(users).length+' online'; Object.keys(users).forEach(id=>{if(id!==myID&&!peers[id]) setTimeout(()=>createPeer(id,true),500);});}); signals(); chat(); timer();}
+async function unlockAudio(){const a=new Audio(); try{await a.play();}catch(e){}}
+function createPeer(id,offerer){const pc=new RTCPeerConnection(servers); peers[id]=pc; localStream.getTracks().forEach(t=>pc.addTrack(t,localStream)); pc.onicecandidate=e=>{if(e.candidate) push(ref(db,`rooms/${room}/signals/${id}/${myID}/ice`),e.candidate.toJSON());}; pc.ontrack=async e=>{let audio=document.getElementById('a_'+id); if(!audio){audio=document.createElement('audio'); audio.id='a_'+id; audio.autoplay=true; audio.playsInline=true; audio.volume=1; document.body.appendChild(audio);} audio.srcObject=e.streams[0]; try{await audio.play();}catch(err){}}; if(offerer){pc.createOffer().then(o=>pc.setLocalDescription(o).then(()=>set(ref(db,`rooms/${room}/signals/${myID}/${id}/offer`),o)));}}
+function signals(){onValue(ref(db,`rooms/${room}/signals/${myID}`),async snap=>{const data=snap.val()||{}; for(const from in data){const d=data[from]; if(d.offer&&!peers[from]){createPeer(from,false); await peers[from].setRemoteDescription(new RTCSessionDescription(d.offer)); const ans=await peers[from].createAnswer(); await peers[from].setLocalDescription(ans); await set(ref(db,`rooms/${room}/signals/${from}/${myID}/answer`),ans); flushIce(from);} if(d.answer&&peers[from]&&!peers[from].currentRemoteDescription){await peers[from].setRemoteDescription(new RTCSessionDescription(d.answer)); flushIce(from);} if(d.ice){Object.values(d.ice).forEach(c=>queueIce(from,c)); remove(ref(db,`rooms/${room}/signals/${myID}/${from}/ice`));}}});}
+function queueIce(id,c){if(peers[id]?.remoteDescription) peers[id].addIceCandidate(new RTCIceCandidate(c)).catch(()=>{}); else{pendingIce[id]=pendingIce[id]||[]; pendingIce[id].push(c);}}
+function flushIce(id){(pendingIce[id]||[]).forEach(c=>peers[id].addIceCandidate(new RTCIceCandidate(c)).catch(()=>{})); pendingIce[id]=[];}
+function chat(){const chatRef=ref(db,`rooms/${room}/chat`); document.getElementById('send').onclick=()=>{const i=document.getElementById('msg'); const v=i.value.trim(); if(!v)return; push(chatRef,{user:userName,id:myID,msg:v,ts:serverTimestamp()}); i.value='';}; onChildAdded(chatRef,s=>{const d=s.val(); const box=document.createElement('div'); box.className='mb-2 text-sm'; box.innerHTML=`<b>${d.user}:</b> ${d.msg}`; const c=document.getElementById('msgs'); c.appendChild(box); c.scrollTop=999999;});}
+function timer(){let s=0; setInterval(()=>{s++; const m=String(Math.floor(s/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); document.getElementById('time').textContent=m+':'+ss;},1000);} window.toggleChat=()=>document.getElementById('chat').classList.toggle('hidden');
+</script>
 </head>
-<body class="flex items-center justify-center p-4">
-
-    <div id="lobby" class="glass safe-card rounded-[3rem] p-10 shadow-2xl flex flex-col items-center">
-        <div class="w-16 h-16 bg-blue-600/20 rounded-2xl flex items-center justify-center mb-6">
-            <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
-        </div>
-        <h2 class="text-2xl font-black mb-2 text-center tracking-tighter">call direct</h2>
-        <p class="text-slate-500 text-xs mb-8 font-semibold tracking-wide">sala pública global</p>
-        <div class="w-full space-y-4">
-            <input id="uName" type="text" placeholder="como quer ser chamado?" class="w-full bg-slate-900 border border-slate-800 rounded-2xl px-6 py-5 text-sm outline-none focus:border-blue-600 transition-all font-semibold">
-            <button onclick="joinPublic()" class="w-full py-5 bg-blue-600 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-900/20 active:scale-95 transition-all">entrar agora</button>
-        </div>
-    </div>
-
-    <div id="app-interface" class="hidden glass safe-card relative rounded-[3rem] p-8 flex flex-col items-center shadow-2xl">
-        <div class="absolute top-10 left-10 flex flex-col">
-            <span class="text-[10px] font-black text-blue-500 tracking-[0.2em] uppercase">on-air</span>
-            <span id="statusText" class="text-[11px] text-slate-400 font-bold mt-1">conectando...</span>
-            <span id="callTimer" class="text-[12px] font-mono-timer text-slate-500 mt-1">00:00</span>
-        </div>
-
-        <div id="userIcon" class="w-28 h-28 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-full flex items-center justify-center mb-12 mt-12 shadow-2xl shadow-blue-900/40 transition-transform duration-75">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
-        </div>
-
-        <div class="w-full">
-            <button onclick="toggleChat()" class="w-full p-6 rounded-3xl bg-slate-800/50 text-slate-200 font-black text-[11px] tracking-[0.2em] uppercase active:scale-95 transition-all border border-white/5">abrir chat</button>
-        </div>
-
-        <div id="chatContainer" class="hidden absolute inset-0 glass rounded-[3rem] p-8 flex flex-col z-20">
-            <div class="flex justify-between items-center mb-6">
-                <span class="text-[11px] font-black text-blue-500 tracking-[0.2em] uppercase">mensagens</span>
-                <button onclick="toggleChat()" class="w-8 h-8 flex items-center justify-center bg-slate-800 rounded-full text-xl">&times;</button>
-            </div>
-            <div id="chatMessages" class="flex-1 overflow-y-auto mb-6 pr-1 scrollbar-hide"></div>
-            <div class="flex gap-3 bg-slate-900 p-2 rounded-2xl border border-white/5">
-                <input id="chatInput" type="text" placeholder="sua mensagem..." class="flex-1 bg-transparent rounded-xl px-4 py-3 text-xs outline-none font-medium">
-                <button id="sendMsg" class="bg-blue-600 w-12 h-12 flex items-center justify-center rounded-xl shadow-lg shadow-blue-900/40">➤</button>
-            </div>
-        </div>
-
-        <p class="mt-8 text-slate-700 text-[10px] font-black tracking-[0.3em]">Made By: @085_teuzinnn</p>
-    </div>
-
+<body class="bg-slate-950 text-white min-h-screen flex items-center justify-center p-4">
+<div id="lobby" class="w-full max-w-sm bg-slate-900 rounded-3xl p-6 space-y-4">
+<h1 class="text-2xl font-bold">Call Direct</h1>
+<input id="uName" class="w-full p-4 rounded-2xl bg-slate-800" placeholder="Seu nome">
+<button onclick="joinPublic()" class="w-full p-4 rounded-2xl bg-blue-600 font-bold">Entrar</button>
+</div>
+<div id="app" class="hidden w-full max-w-sm bg-slate-900 rounded-3xl p-6 relative">
+<div class="flex justify-between text-sm mb-6"><span id="status">0 online</span><span id="time">00:00</span></div>
+<div class="w-28 h-28 rounded-full bg-blue-600 mx-auto mb-6"></div>
+<button onclick="toggleChat()" class="w-full p-4 rounded-2xl bg-slate-800">Abrir Chat</button>
+<div id="chat" class="hidden absolute inset-0 bg-slate-900 rounded-3xl p-4 flex flex-col">
+<div class="flex justify-between mb-3"><b>Chat</b><button onclick="toggleChat()">X</button></div>
+<div id="msgs" class="flex-1 overflow-y-auto"></div>
+<div class="flex gap-2 mt-3"><input id="msg" class="flex-1 p-3 rounded-xl bg-slate-800"><button id="send" class="px-4 rounded-xl bg-blue-600">></button></div>
+</div>
+</div>
 </body>
 </html>
