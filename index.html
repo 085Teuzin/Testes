@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>call direct live</title>
+    <title>Call Direct - Public</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -24,11 +25,24 @@
         
         const roomName = "public_room";
         let myID = Math.random().toString(36).substring(7);
-        let userName = "user_" + myID;
-        let localStream, peers = {}, timerInterval;
+        let userName = "";
+        let localStream, peers = {};
         const servers = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
+        const userColors = {};
 
-        window.onload = () => {
+        const getRandomColor = () => {
+            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        };
+
+        window.joinPublic = async () => {
+            const inputName = document.getElementById('uName').value.trim();
+            if(!inputName) return alert("digite seu nome");
+            userName = inputName;
+
+            document.getElementById('lobby').classList.add('hidden');
+            document.getElementById('app-interface').classList.remove('hidden');
+            
             initCall();
         };
 
@@ -38,17 +52,16 @@
                 setupAudioVisualizer(localStream);
                 
                 const presenceRef = ref(db, `global_rooms/${roomName}/users/${myID}`);
-                set(presenceRef, { name: userName, status: "online", id: myID });
+                set(presenceRef, { name: userName, id: myID });
                 onDisconnect(presenceRef).remove();
 
-                const roomUsersRef = ref(db, `global_rooms/${roomName}/users`);
-                onValue(roomUsersRef, (snap) => {
+                onValue(ref(db, `global_rooms/${roomName}/users`), (snap) => {
                     const users = snap.val() || {};
-                    updateParticipantsList(users);
+                    document.getElementById('statusText').innerText = `${Object.keys(users).length} online`;
                     
                     Object.keys(users).forEach(userID => {
                         if (userID !== myID && !peers[userID]) {
-                            setupPeer(userID, true);
+                            createPeerConnection(userID, true);
                         }
                     });
                 });
@@ -56,15 +69,21 @@
                 setupSignaling();
                 setupChat();
             } catch (e) {
-                console.error(e);
+                alert("erro ao acessar microfone: " + e.message);
             }
         }
 
-        function setupPeer(userID, isOffer) {
+        function createPeerConnection(userID, isOffer) {
             const pc = new RTCPeerConnection(servers);
             peers[userID] = pc;
 
             localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+            pc.onicecandidate = (e) => {
+                if (e.candidate) {
+                    push(ref(db, `global_rooms/${roomName}/signals/${userID}/${myID}/ice`), e.candidate.toJSON());
+                }
+            };
 
             pc.ontrack = (e) => {
                 let audio = document.getElementById(`audio_${userID}`);
@@ -77,47 +96,38 @@
                 audio.srcObject = e.streams[0];
             };
 
-            pc.onicecandidate = (e) => {
-                if (e.candidate) {
-                    set(ref(db, `global_rooms/${roomName}/signals/${userID}/${myID}/ice/${Math.random().toString(36).substring(7)}`), e.candidate.toJSON());
-                }
-            };
-
             if (isOffer) {
                 pc.createOffer().then(offer => {
                     pc.setLocalDescription(offer);
                     set(ref(db, `global_rooms/${roomName}/signals/${myID}/${userID}/offer`), { sdp: offer.sdp, type: offer.type });
                 });
             }
-
-            return pc;
         }
 
         function setupSignaling() {
-            onValue(ref(db, `global_rooms/${roomName}/signals`), (snap) => {
+            onValue(ref(db, `global_rooms/${roomName}/signals/${myID}`), (snap) => {
                 const signals = snap.val() || {};
-                
-                if (signals[myID]) {
-                    Object.keys(signals[myID]).forEach(fromID => {
-                        const data = signals[myID][fromID];
-                        if (data.offer && !peers[fromID]) {
-                            const pc = setupPeer(fromID, false);
-                            pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-                            pc.createAnswer().then(answer => {
-                                pc.setLocalDescription(answer);
-                                set(ref(db, `global_rooms/${roomName}/signals/${fromID}/${myID}/answer`), { sdp: answer.sdp, type: answer.type });
-                            });
-                        }
-                        if (data.answer && peers[fromID]) {
-                            peers[fromID].setRemoteDescription(new RTCSessionDescription(data.answer));
-                        }
-                        if (data.ice && peers[fromID]) {
-                            Object.values(data.ice).forEach(candidate => {
-                                peers[fromID].addIceCandidate(new RTCIceCandidate(candidate)).catch(e => {});
-                            });
-                        }
-                    });
-                }
+                Object.keys(signals).forEach(fromID => {
+                    const { offer, answer, ice } = signals[fromID];
+                    
+                    if (offer && !peers[fromID]) {
+                        createPeerConnection(fromID, false);
+                        peers[fromID].setRemoteDescription(new RTCSessionDescription(offer));
+                        peers[fromID].createAnswer().then(ans => {
+                            peers[fromID].setLocalDescription(ans);
+                            set(ref(db, `global_rooms/${roomName}/signals/${fromID}/${myID}/answer`), { sdp: ans.sdp, type: ans.type });
+                        });
+                    }
+                    if (answer && peers[fromID]) {
+                        peers[fromID].setRemoteDescription(new RTCSessionDescription(answer));
+                    }
+                    if (ice) {
+                        Object.values(ice).forEach(candidate => {
+                            peers[fromID].addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
+                        });
+                        remove(ref(db, `global_rooms/${roomName}/signals/${myID}/${fromID}/ice`));
+                    }
+                });
             });
         }
 
@@ -126,28 +136,31 @@
             document.getElementById('sendMsg').onclick = () => {
                 const input = document.getElementById('chatInput');
                 if (input.value.trim()) {
-                    push(chatRef, { user: userName, msg: btoa(unescape(encodeURIComponent(input.value))), ts: serverTimestamp() });
+                    push(chatRef, { user: userName, id: myID, msg: btoa(unescape(encodeURIComponent(input.value))), ts: serverTimestamp() });
                     input.value = "";
                 }
             };
 
             onChildAdded(chatRef, (snap) => {
                 const data = snap.val();
-                let decrypted = "";
-                try { decrypted = decodeURIComponent(escape(atob(data.msg))); } catch(e) { decrypted = data.msg; }
+                let msg = "";
+                try { msg = decodeURIComponent(escape(atob(data.msg))); } catch(e) { msg = data.msg; }
 
+                if (!userColors[data.id]) userColors[data.id] = getRandomColor();
+
+                const isMe = data.id === myID;
                 const div = document.createElement('div');
-                div.className = `p-3 rounded-2xl text-[11px] mb-2 shadow-sm w-fit max-w-[85%] break-all ${data.user === userName ? 'bg-blue-600 ml-auto rounded-tr-none' : 'bg-slate-800 rounded-tl-none'}`;
-                div.innerHTML = `<span class="block text-[8px] opacity-60 mb-1">${data.user}</span>${decrypted}`;
+                div.className = `flex flex-col mb-4 ${isMe ? 'items-end' : 'items-start'}`;
+                
+                div.innerHTML = `
+                    <span class="text-[9px] font-bold mb-1 px-2" style="color: ${userColors[data.id]}">${data.user}</span>
+                    <div class="p-3 rounded-2xl text-[12px] shadow-sm max-w-[85%] break-all ${isMe ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-800 text-slate-200 rounded-tl-none'}">
+                        ${msg}
+                    </div>
+                `;
                 document.getElementById('chatMessages').appendChild(div);
-                document.getElementById('chatMessages').scrollTop = 9999;
+                document.getElementById('chatMessages').scrollTop = 99999;
             });
-        }
-
-        function updateParticipantsList(users) {
-            const list = Object.values(users);
-            document.getElementById('statusText').innerText = `${list.length} conectados agora`;
-            if(list.length >= 2) startTimer();
         }
 
         function setupAudioVisualizer(stream) {
@@ -157,19 +170,15 @@
             ans.fftSize = 64;
             src.connect(ans);
             const data = new Uint8Array(ans.frequencyBinCount);
-            function render() {
+            const render = () => {
                 requestAnimationFrame(render);
                 ans.getByteFrequencyData(data);
                 const avg = data.reduce((a,b) => a+b)/data.length;
                 document.getElementById('userIcon').style.transform = `scale(${1 + avg/150})`;
-            }
+            };
             render();
-        }
-
-        function startTimer() {
-            if (timerInterval) return;
             let s = 0;
-            timerInterval = setInterval(() => {
+            setInterval(() => {
                 s++;
                 document.getElementById('callTimer').innerText = `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
             }, 1000);
@@ -178,42 +187,56 @@
         window.toggleChat = () => document.getElementById('chatContainer').classList.toggle('hidden');
     </script>
     <style>
-        body { background: #020617; color: #f8fafc; font-family: sans-serif; overflow: hidden; height: 100vh; width: 100vw; }
-        .glass { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); }
+        body { background: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; width: 100vw; }
+        .glass { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.05); }
         .safe-card { width: 92%; max-width: 380px; height: auto; max-height: 90vh; }
-        * { text-transform: lowercase; }
+        input::placeholder { color: #475569; }
+        .font-mono-timer { font-family: 'JetBrains Mono', monospace; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="flex items-center justify-center p-4">
 
-    <div id="app-interface" class="glass safe-card relative rounded-[2.5rem] p-8 flex flex-col items-center shadow-2xl">
-        <div class="absolute top-8 left-8 flex flex-col">
-            <span class="text-[10px] font-black text-blue-500 tracking-widest">ao vivo</span>
-            <span id="statusText" class="text-[9px] text-slate-500 font-bold">iniciando áudio...</span>
-            <span id="callTimer" class="text-[10px] font-mono text-slate-400 mt-0.5">00:00</span>
+    <div id="lobby" class="glass safe-card rounded-[3rem] p-10 shadow-2xl flex flex-col items-center">
+        <div class="w-16 h-16 bg-blue-600/20 rounded-2xl flex items-center justify-center mb-6">
+            <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+        </div>
+        <h2 class="text-2xl font-black mb-2 text-center tracking-tighter">call direct</h2>
+        <p class="text-slate-500 text-xs mb-8 font-semibold tracking-wide">sala pública global</p>
+        <div class="w-full space-y-4">
+            <input id="uName" type="text" placeholder="como quer ser chamado?" class="w-full bg-slate-900 border border-slate-800 rounded-2xl px-6 py-5 text-sm outline-none focus:border-blue-600 transition-all font-semibold">
+            <button onclick="joinPublic()" class="w-full py-5 bg-blue-600 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-900/20 active:scale-95 transition-all">entrar agora</button>
+        </div>
+    </div>
+
+    <div id="app-interface" class="hidden glass safe-card relative rounded-[3rem] p-8 flex flex-col items-center shadow-2xl">
+        <div class="absolute top-10 left-10 flex flex-col">
+            <span class="text-[10px] font-black text-blue-500 tracking-[0.2em] uppercase">on-air</span>
+            <span id="statusText" class="text-[11px] text-slate-400 font-bold mt-1">conectando...</span>
+            <span id="callTimer" class="text-[12px] font-mono-timer text-slate-500 mt-1">00:00</span>
         </div>
 
-        <div id="userIcon" class="w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-full flex items-center justify-center mb-10 mt-10 shadow-2xl shadow-blue-900/20 transition-transform duration-75">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+        <div id="userIcon" class="w-28 h-28 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-full flex items-center justify-center mb-12 mt-12 shadow-2xl shadow-blue-900/40 transition-transform duration-75">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
         </div>
 
-        <div class="w-full mb-8">
-            <button onclick="toggleChat()" class="w-full p-5 rounded-2xl bg-slate-800 text-slate-200 font-black text-[10px] tracking-widest active:scale-95 transition-transform">abrir chat</button>
+        <div class="w-full">
+            <button onclick="toggleChat()" class="w-full p-6 rounded-3xl bg-slate-800/50 text-slate-200 font-black text-[11px] tracking-[0.2em] uppercase active:scale-95 transition-all border border-white/5">abrir chat</button>
         </div>
 
-        <div id="chatContainer" class="hidden absolute inset-0 glass rounded-[2.5rem] p-6 flex flex-col z-20">
-            <div class="flex justify-between items-center mb-4 border-b border-white/5 pb-3">
-                <span class="text-[9px] font-black text-blue-500 tracking-widest">mensagens</span>
-                <button onclick="toggleChat()" class="text-2xl leading-none">&times;</button>
+        <div id="chatContainer" class="hidden absolute inset-0 glass rounded-[3rem] p-8 flex flex-col z-20">
+            <div class="flex justify-between items-center mb-6">
+                <span class="text-[11px] font-black text-blue-500 tracking-[0.2em] uppercase">mensagens</span>
+                <button onclick="toggleChat()" class="w-8 h-8 flex items-center justify-center bg-slate-800 rounded-full text-xl">&times;</button>
             </div>
-            <div id="chatMessages" class="flex-1 overflow-y-auto mb-4 space-y-3 pr-1 scrollbar-hide"></div>
-            <div class="flex gap-2 bg-slate-900/50 p-1.5 rounded-2xl border border-white/5">
-                <input id="chatInput" type="text" placeholder="digite algo..." class="flex-1 bg-transparent rounded-xl px-4 py-2 text-xs outline-none">
-                <button id="sendMsg" class="bg-blue-600 w-10 h-10 flex items-center justify-center rounded-xl">➤</button>
+            <div id="chatMessages" class="flex-1 overflow-y-auto mb-6 pr-1 scrollbar-hide"></div>
+            <div class="flex gap-3 bg-slate-900 p-2 rounded-2xl border border-white/5">
+                <input id="chatInput" type="text" placeholder="sua mensagem..." class="flex-1 bg-transparent rounded-xl px-4 py-3 text-xs outline-none font-medium">
+                <button id="sendMsg" class="bg-blue-600 w-12 h-12 flex items-center justify-center rounded-xl shadow-lg shadow-blue-900/40">➤</button>
             </div>
         </div>
 
-        <p class="text-slate-700 text-[10px] font-black tracking-widest uppercase">public global room</p>
+        <p class="mt-8 text-slate-700 text-[10px] font-black tracking-[0.3em] uppercase">@085_teuzinnn</p>
     </div>
 
 </body>
