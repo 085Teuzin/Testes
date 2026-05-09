@@ -2,231 +2,387 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Write Together - Made By: @085_Teuzinnn</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Obby Multiplayer - Made by: @085_Teuzinnn</title>
     <style>
-        :root {
-            --bg: #f4f1ea;
-            --text: #333;
-            --editor-bg: #fff;
-            --accent: #3d3d3d;
-            --transition: 0.3s;
-            --vh: 1vh;
-        }
-        .dark-mode {
-            --bg: #1a1a1a;
-            --text: #f4f1ea;
-            --editor-bg: #2d2d2d;
-            --accent: #ebca8a;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-
-        html, body {
-            overflow: hidden;
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            height: calc(var(--vh, 1vh) * 100);
-            display: flex;
-            flex-direction: column;
-            transition: background var(--transition), color var(--transition);
-            /* Garante que o conteúdo não fique sob as barras do sistema */
-            padding-top: env(safe-area-inset-top, 20px);
-            padding-bottom: env(safe-area-inset-bottom, 20px);
-        }
-
-        /* Botão Flutuante de Tema */
-        #themeBtn {
-            position: fixed;
-            top: calc(env(safe-area-inset-top, 20px) + 15px);
-            right: 20px;
-            z-index: 9999;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: var(--accent);
-            color: var(--bg);
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            transition: transform 0.1s active;
-        }
-        #themeBtn:active { transform: scale(0.9); }
-
-        #setup {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .credits { margin-top: 25px; font-size: 0.85rem; opacity: 0.8; font-weight: bold; }
-        h1 { margin-bottom: 30px; font-size: 2.2rem; letter-spacing: -1px; }
-
-        input {
-            width: 100%;
-            max-width: 320px;
-            padding: 18px;
-            border: 2px solid #ccc;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            font-size: 1.1rem;
-            background: #fff;
-            outline: none;
-            text-align: center;
-        }
-
-        .btn-main {
-            background-color: var(--accent);
-            color: #fff;
-            border: none;
-            padding: 16px 40px;
-            border-radius: 15px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-
-        #app {
-            display: none;
-            flex-direction: column;
-            height: 100%;
-            width: 100%;
-        }
-
-        #editor {
-            flex: 1;
-            width: 100%;
-            border: none;
-            padding: 40px 25px;
-            font-size: 1.25rem;
-            line-height: 1.8;
-            font-family: 'Georgia', serif;
-            resize: none;
-            outline: none;
-            background: var(--editor-bg);
-            color: var(--text);
-            transition: background var(--transition), color var(--transition);
-        }
-
-        #status {
-            background: rgba(0,0,0,0.05);
-            padding: 12px 25px;
-            font-size: 0.75rem;
-            display: flex;
-            justify-content: space-between;
-            letter-spacing: 0.5px;
-            font-weight: 500;
-        }
-
-        @media (max-height: 500px) {
-            h1, .credits { display: none; }
-        }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #000; touch-action: none; user-select: none; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+        
+        #my-stats { position: absolute; top: 20px; left: 20px; color: white; text-shadow: 2px 2px 4px #000; font-weight: bold; line-height: 1.4; font-size: 18px; }
+        #opp-stats { position: absolute; top: 20px; right: 20px; color: #FFC0CB; text-shadow: 2px 2px 4px #000; font-weight: bold; line-height: 1.4; text-align: right; font-size: 18px; }
+        
+        #chat-float-btn { position: absolute; right: 20px; top: 75%; width: 60px; height: 60px; background: #ff4500; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; color: white; cursor: pointer; pointer-events: auto; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100; }
+        #chat-modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 400px; height: 450px; background: rgba(20, 20, 20, 0.95); border-radius: 15px; display: none; flex-direction: column; z-index: 2100; pointer-events: auto; border: 1px solid #333; box-shadow: 0 0 30px rgba(0,0,0,1); }
+        #chat-header { padding: 15px; background: #1a1a1a; border-radius: 15px 15px 0 0; display: flex; justify-content: space-between; align-items: center; color: #ff4500; font-weight: bold; }
+        #close-chat { cursor: pointer; color: white; font-size: 20px; }
+        #chat-messages { flex: 1; overflow-y: auto; padding: 15px; color: white; font-size: 14px; display: flex; flex-direction: column; gap: 8px; }
+        #chat-input { background: #222; border: none; padding: 15px; color: white; outline: none; border-radius: 0 0 15px 15px; border-top: 1px solid #333; }
+        
+        #lobby { position: absolute; width: 100%; height: 100%; background: #0f0f0f; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; color: white; pointer-events: auto; text-align: center; }
+        #lobby h1 { color: #ff4500; font-size: 50px; margin-top: 0; position: absolute; top: 50px; width: 100%; }
+        #lobby h2 { font-weight: 300; margin-bottom: 40px; color: #888; }
+        .btn-container { display: flex; gap: 20px; justify-content: center; }
+        .lobby-btn { padding: 20px 0; font-size: 18px; cursor: pointer; border: none; color: white; border-radius: 30px; transition: 0.3s; width: 180px; font-weight: bold; }
+        .btn-p1 { background: #FFA500; box-shadow: 0 0 15px rgba(255, 165, 0, 0.3); }
+        .btn-p2 { background: #FFC0CB; color: #333; box-shadow: 0 0 15px rgba(255, 192, 203, 0.3); }
+        .lobby-btn:hover { transform: translateY(-5px); opacity: 0.9; }
+        
+        #credits { position: absolute; bottom: 20px; color: #444; font-size: 14px; }
+        #progress-container { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); width: 50%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden; }
+        #progress-bar { width: 0%; height: 100%; background: #ff4500; transition: width 0.3s; }
+        
+        .touch-hud { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; z-index: 5; }
+        #dpad-area { position: absolute; bottom: 40px; left: 40px; width: 100px; height: 100px; background: rgba(255,255,255,0.05); border-radius: 50%; pointer-events: auto; }
+        #jump-btn { position: absolute; bottom: 50px; right: 40px; width: 70px; height: 70px; background: rgba(255,69,0,0.2); border-radius: 50%; pointer-events: auto; display: flex; align-items: center; justify-content: center; color: white; border: 1px solid #ff4500; }
+        #loading-screen { position: absolute; width: 100%; height: 100%; background: #000; color: #fff; display: none; align-items: center; justify-content: center; z-index: 3000; }
     </style>
 </head>
 <body>
 
-    <button id="themeBtn" onclick="toggleTheme()">🌙</button>
+    <div id="loading-screen">Carregando...</div>
 
-    <div id="setup">
-        <h1>Write Together</h1>
-        <input type="text" id="roomName" placeholder="Enter room name...">
-        <button class="btn-main" onclick="startSession()">Join Session</button>
-        <div class="credits">Made by: @085_Teuzinnm</div>
-    </div>
-
-    <div id="app">
-        <textarea id="editor" placeholder="Start your story here..."></textarea>
-        <div id="status">
-            <span id="charCount">0 Caractere</span>
-            <span>Sicronizado</span>
+    <div id="lobby">
+        <h1>Obby Multiplayer</h1>
+        <h2>Enfrente seu amigo</h2>
+        <div class="btn-container">
+            <button class="lobby-btn btn-p1" onclick="escolherPlayer(1)">P1 (Host)</button>
+            <button class="lobby-btn btn-p2" onclick="escolherPlayer(2)">P2 (Guest)</button>
         </div>
+        <div id="credits">Made by: @085_Teuzinnn</div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <div id="ui-layer">
+        <div id="my-stats">
+            Fase: <span id="current-lvl">1</span><br>
+            Mortes: <span id="death-count">0</span><br>
+            Tempo: <span id="timer">00:00</span>
+        </div>
+        
+        <div id="opp-stats">
+            Fase: <span id="opp-lvl">1</span><br>
+            Mortes: <span id="opp-deaths">0</span><br>
+            Tempo: <span id="opp-timer">00:00</span>
+        </div>
+        
+        <button id="chat-float-btn" onclick="toggleChat()">💬</button>
+        
+        <div id="chat-modal">
+            <div id="chat-header">
+                <span>CHAT MULTIPLAYER</span>
+                <span id="close-chat" onclick="toggleChat()">✕</span>
+            </div>
+            <div id="chat-messages"></div>
+            <input type="text" id="chat-input" placeholder="Escreva aqui..." maxlength="50">
+        </div>
 
-    <script>
-        // Ajuste dinâmico para evitar que o teclado esconda o layout
-        const setVh = () => {
-            let vh = window.innerHeight * 0.01;
-            document.documentElement.style.setProperty('--vh', `${vh}px`);
-        };
-        window.addEventListener('resize', setVh);
-        window.addEventListener('orientationchange', setVh);
-        setVh();
+        <div id="progress-container"><div id="progress-bar"></div></div>
+    </div>
 
-        // As tuas credenciais fornecidas
+    <div id="mobile-hud" class="touch-hud">
+        <div id="dpad-area"></div>
+        <div id="jump-btn">PULO</div>
+    </div>
+
+    <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
+    
+    <script type="module">
+        import * as THREE from 'three';
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue, get, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
         const firebaseConfig = {
-            apiKey: "AIzaSyDthwqD0CGFwDov-zfO-Hx6TD_y3lHsnoc",
-            authDomain: "teuzin-apps.firebaseapp.com",
-            databaseURL: "https://teuzin-apps-default-rtdb.firebaseio.com",
-            projectId: "teuzin-apps",
-            storageBucket: "teuzin-apps.firebasestorage.app",
-            messagingSenderId: "695505471506",
-            appId: "1:695505471506:web:efe322e605af4a30bfb0cb"
+            apiKey: "AIzaSyBqRAsWfP4w-r82PZOaJcDck7W8Aeph3p8",
+            authDomain: "teuzin-games.firebaseapp.com",
+            databaseURL: "https://teuzin-games-default-rtdb.firebaseio.com",
+            projectId: "teuzin-games",
+            storageBucket: "teuzin-games.firebasestorage.app",
+            messagingSenderId: "548192563345",
+            appId: "1:548192563345:web:e729e39f9f266aa6a68f30"
         };
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        let currentRoom = "";
-        const editor = document.getElementById('editor');
-        const charDisplay = document.getElementById('charCount');
-        const themeBtn = document.getElementById('themeBtn');
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-        function startSession() {
-            const name = document.getElementById('roomName').value.trim();
-            if(!name) return;
-            currentRoom = name;
+        let FASES = [];
+        let playerID = null;
+        let faseAtual = 0, plataformas = [], lavas = [], checkpointFinal = null;
+        let mortes = 0, startTime = 0;
+        let trails = [];
+        
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.body.appendChild(renderer.domElement);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+
+        const p1 = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshStandardMaterial({ color: 0xFFA500 }));
+        const p2 = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshStandardMaterial({ color: 0xFFC0CB }));
+        scene.add(p1, p2);
+
+        let localPlayer = null, remotePlayer = null;
+        let velocityY = 0, isGrounded = false;
+        const inputState = { Forward: false, Backward: false, Left: false, Right: false, Jump: false };
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(freq, type, duration, vol) {
+            if(audioCtx.state === 'suspended') return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playMusic() {
+            const notes = [261.63, 329.63, 392.00, 523.25];
+            let i = 0;
+            setInterval(() => {
+                if(!playerID) return;
+                playSound(notes[i], 'triangle', 0.5, 0.05);
+                i = (i + 1) % notes.length;
+            }, 600);
+        }
+
+        window.toggleChat = () => {
+            const modal = document.getElementById('chat-modal');
+            modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+        };
+
+        async function sincronizarMapa() {
+            document.getElementById('loading-screen').style.display = 'flex';
+            const mapRef = ref(db, 'world/mapData');
+            const snapshot = await get(mapRef);
+            if (playerID === 1 || !snapshot.exists()) {
+                const novasFases = [];
+                for (let i = 1; i <= 50; i++) {
+                    const fase = { plataformas: [{ x: 0, y: 0, z: 0, w: 6, d: 6, cor: 0x222222, lava: false }] };
+                    let lx = 0, ly = 0, lz = 0;
+                    const nPlat = 6 + Math.floor(i / 5);
+                    for (let j = 1; j <= nPlat; j++) {
+                        lx += (Math.random() - 0.5) * 10; ly += 0.4; lz -= 8.8;
+                        const isLava = i > 5 && Math.random() < 0.15;
+                        if (isLava) {
+                            fase.plataformas.push({ x: lx, y: ly, z: lz, w: 3, d: 3, cor: 0x111111, lava: true });
+                            let sideX = lx + (Math.random() > 0.5 ? 4 : -4);
+                            fase.plataformas.push({ x: sideX, y: ly, z: lz, w: 3, d: 3, cor: 0x444444, lava: false });
+                        } else {
+                            fase.plataformas.push({ x: lx, y: ly, z: lz, w: 3, d: 3, cor: 0x444444, lava: false });
+                        }
+                    }
+                    fase.plataformas.push({ x: lx, y: ly + 0.5, z: lz - 9, w: 6, d: 6, cor: 0xff4500 });
+                    novasFases.push(fase);
+                }
+                if (playerID === 1) await set(mapRef, novasFases);
+                FASES = novasFases;
+            } else {
+                FASES = snapshot.val();
+            }
+            document.getElementById('loading-screen').style.display = 'none';
+            carregarFase(0);
+            startSync();
+            startTime = Date.now();
+            playMusic();
+        }
+
+        window.escolherPlayer = (id) => {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            playerID = id;
+            localPlayer = (id === 1) ? p1 : p2;
+            remotePlayer = (id === 1) ? p2 : p1;
             
-            document.getElementById('setup').style.display = 'none';
-            document.getElementById('app').style.display = 'flex';
-            setVh();
-            
-            // Conexão com o Firebase para sincronização em tempo real
-            db.ref('rooms/' + currentRoom).on('value', (snapshot) => {
-                const val = snapshot.val();
-                if (val && val.text !== editor.value) {
-                    const pos = editor.selectionStart;
-                    editor.value = val.text;
-                    editor.setSelectionRange(pos, pos);
-                    updateStats();
+            if(id === 2) {
+                document.getElementById('my-stats').style.color = '#FFC0CB';
+                document.getElementById('opp-stats').style.color = '#FFA500';
+            }
+
+            document.getElementById('lobby').style.display = 'none';
+            sincronizarMapa();
+            enviarMensagemSistema(`P${id} entrou na arena!`);
+        };
+
+        const chatInput = document.getElementById('chat-input');
+        chatInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && chatInput.value.trim() !== '') {
+                push(ref(db, 'chat'), {
+                    sender: playerID === 1 ? 'P1' : 'P2',
+                    text: chatInput.value.trim(),
+                    time: serverTimestamp()
+                });
+                chatInput.value = '';
+            }
+        });
+
+        function enviarMensagemSistema(txt) {
+            push(ref(db, 'chat'), { sender: 'SYS', text: txt, time: serverTimestamp() });
+        }
+
+        onValue(ref(db, 'chat'), (snapshot) => {
+            const data = snapshot.val();
+            if (!data) return;
+            const messages = Object.values(data).sort((a,b) => a.time - b.time).slice(-20);
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = messages.map(m => {
+                let color = '#fff';
+                if(m.sender === 'P1') color = '#FFA500';
+                if(m.sender === 'P2') color = '#FFC0CB';
+                if(m.sender === 'SYS') color = '#ff4500';
+                return `<div><b style="color:${color}">${m.sender}:</b> ${m.text}</div>`;
+            }).join('');
+            container.scrollTop = container.scrollHeight;
+        });
+
+        function createTrail(pos, color) {
+            const geo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+            const mat = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.5 });
+            const trail = new THREE.Mesh(geo, mat);
+            trail.position.copy(pos);
+            scene.add(trail);
+            trails.push({ mesh: trail, life: 1.0 });
+        }
+
+        window.addEventListener('keydown', e => {
+            if(document.activeElement === chatInput) return;
+            if(['KeyW', 'ArrowUp'].includes(e.code)) inputState.Forward = true;
+            if(['KeyS', 'ArrowDown'].includes(e.code)) inputState.Backward = true;
+            if(['KeyA', 'ArrowLeft'].includes(e.code)) inputState.Left = true;
+            if(['KeyD', 'ArrowRight'].includes(e.code)) inputState.Right = true;
+            if(e.code === 'Space') inputState.Jump = true;
+        });
+
+        window.addEventListener('keyup', e => {
+            if(['KeyW', 'ArrowUp'].includes(e.code)) inputState.Forward = false;
+            if(['KeyS', 'ArrowDown'].includes(e.code)) inputState.Backward = false;
+            if(['KeyA', 'ArrowLeft'].includes(e.code)) inputState.Left = false;
+            if(['KeyD', 'ArrowRight'].includes(e.code)) inputState.Right = false;
+            if(e.code === 'Space') inputState.Jump = false;
+        });
+
+        function startSync() {
+            setInterval(() => {
+                if(!playerID) return;
+                const elapsed = Math.floor((Date.now() - startTime)/1000);
+                const timeStr = `${Math.floor(elapsed/60).toString().padStart(2,'0')}:${(elapsed%60).toString().padStart(2,'0')}`;
+                
+                set(ref(db, 'players/p' + playerID), {
+                    x: localPlayer.position.x, y: localPlayer.position.y, z: localPlayer.position.z,
+                    fase: faseAtual, mortes: mortes, tempo: timeStr
+                });
+                createTrail(localPlayer.position, playerID === 1 ? 0xFFA500 : 0xFFC0CB);
+            }, 100);
+
+            const oppID = playerID === 1 ? 2 : 1;
+            onValue(ref(db, 'players/p' + oppID), (snapshot) => {
+                const data = snapshot.val();
+                if(data) {
+                    remotePlayer.position.set(data.x, data.y, data.z);
+                    document.getElementById('opp-lvl').innerText = data.fase + 1;
+                    document.getElementById('opp-deaths').innerText = data.mortes || 0;
+                    document.getElementById('opp-timer').innerText = data.tempo || "00:00";
                 }
             });
         }
 
-        function toggleTheme() {
-            document.body.classList.toggle('dark-mode');
-            const isDark = document.body.classList.contains('dark-mode');
-            themeBtn.innerText = isDark ? "☀️" : "🌙";
-        }
-
-        function updateStats() {
-            charDisplay.innerText = `${editor.value.length} characters`;
-        }
-
-        editor.addEventListener('input', () => {
-            updateStats();
-            db.ref('rooms/' + currentRoom).set({
-                text: editor.value,
-                lastUpdate: Date.now()
+        function carregarFase(index) {
+            if (!FASES[index]) return;
+            plataformas.forEach(p => scene.remove(p));
+            lavas.forEach(l => scene.remove(l));
+            plataformas = []; lavas = [];
+            const d = FASES[index];
+            faseAtual = index;
+            document.getElementById('current-lvl').innerText = index + 1;
+            document.getElementById('progress-bar').style.width = `${(index/50)*100}%`;
+            scene.background = new THREE.Color(0x050505);
+            d.plataformas.forEach((p, i) => {
+                const m = new THREE.Mesh(new THREE.BoxGeometry(p.w, 0.6, p.d), new THREE.MeshStandardMaterial({color: p.cor}));
+                m.position.set(p.x, p.y, p.z);
+                scene.add(m); plataformas.push(m);
+                if(i === d.plataformas.length-1) checkpointFinal = m;
+                if(p.lava) {
+                    const l = new THREE.Mesh(new THREE.BoxGeometry(p.w+0.1, 0.4, p.d+0.1), new THREE.MeshStandardMaterial({color: 0xff0000, emissive: 0xff0000}));
+                    l.position.set(p.x, p.y+0.2, p.z);
+                    scene.add(l); lavas.push(l);
+                }
             });
+            localPlayer.position.set(d.plataformas[0].x, d.plataformas[0].y+2, d.plataformas[0].z);
+            velocityY = 0;
+        }
+
+        function update() {
+            if(!playerID || !localPlayer) return;
+            let moveZ = 0, moveX = 0;
+            if(inputState.Forward) moveZ -= 0.15;
+            if(inputState.Backward) moveZ += 0.15;
+            if(inputState.Left) moveX -= 0.15;
+            if(inputState.Right) moveX += 0.15;
+            localPlayer.position.z += moveZ;
+            localPlayer.position.x += moveX;
+            velocityY -= 0.01; 
+            localPlayer.position.y += velocityY;
+            const pBox = new THREE.Box3().setFromObject(localPlayer);
+            for(let l of lavas) {
+                if(pBox.intersectsBox(new THREE.Box3().setFromObject(l))) {
+                    mortes++; document.getElementById('death-count').innerText = mortes;
+                    playSound(150, 'sawtooth', 0.3, 0.1); carregarFase(faseAtual); return;
+                }
+            }
+            isGrounded = false;
+            for(let plat of plataformas) {
+                const b = new THREE.Box3().setFromObject(plat);
+                if(pBox.intersectsBox(b) && velocityY <= 0) {
+                    localPlayer.position.y = plat.position.y + 0.8;
+                    velocityY = 0; isGrounded = true;
+                    if(plat === checkpointFinal) {
+                        playSound(500, 'sine', 0.2, 0.1);
+                        if(faseAtual < 49) carregarFase(faseAtual + 1);
+                        else { enviarMensagemSistema(`P${playerID} VENCEU!`); alert("VITÓRIA!"); }
+                        return;
+                    }
+                }
+            }
+            if(inputState.Jump && isGrounded) { velocityY = 0.25; isGrounded = false; playSound(400, 'square', 0.1, 0.05); }
+            if(localPlayer.position.y < -15) { mortes++; document.getElementById('death-count').innerText = mortes; carregarFase(faseAtual); }
+            
+            const elapsed = Math.floor((Date.now() - startTime)/1000);
+            document.getElementById('timer').innerText = `${Math.floor(elapsed/60).toString().padStart(2,'0')}:${(elapsed%60).toString().padStart(2,'0')}`;
+            
+            camera.position.lerp(new THREE.Vector3(localPlayer.position.x, localPlayer.position.y+6, localPlayer.position.z+10), 0.1);
+            camera.lookAt(localPlayer.position);
+            for(let i = trails.length - 1; i >= 0; i--) {
+                trails[i].life -= 0.02;
+                trails[i].mesh.material.opacity = trails[i].life;
+                if(trails[i].life <= 0) { scene.remove(trails[i].mesh); trails.splice(i, 1); }
+            }
+        }
+
+        let lastTime = 0;
+        function animate(time) {
+            requestAnimationFrame(animate);
+            if (time - lastTime > 16) {
+                lastTime = time; update(); renderer.render(scene, camera);
+            }
+        }
+        requestAnimationFrame(animate);
+
+        const dpad = document.getElementById('dpad-area');
+        dpad.addEventListener('touchmove', e => {
+            const t = e.touches[0], r = dpad.getBoundingClientRect();
+            const dx = t.clientX - (r.left + r.width/2), dy = t.clientY - (r.top + r.height/2);
+            inputState.Left = dx < -15; inputState.Right = dx > 15;
+            inputState.Forward = dy < -15; inputState.Backward = dy > 15;
+        });
+        dpad.addEventListener('touchend', () => inputState.Forward = inputState.Backward = inputState.Left = inputState.Right = false);
+        document.getElementById('jump-btn').addEventListener('touchstart', () => inputState.Jump = true);
+        document.getElementById('jump-btn').addEventListener('touchend', () => inputState.Jump = false);
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         });
     </script>
 </body>
