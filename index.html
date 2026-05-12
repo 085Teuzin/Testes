@@ -3,279 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>​O Elo de Ferro - Coletivo</title>
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+    <title>Write Together - Made By: @085_Teuzinnn</title>
     <style>
         :root {
-            --leather: #3d1c10;
-            --paper: #f4e4bc;
-            --ink: #2b2b2b;
-            --gold: #c5a059;
-            --gold-dark: #8a6d3b;
+            --bg: #f4f1ea;
+            --text: #333;
+            --editor-bg: #fff;
+            --accent: #3d3d3d;
+            --transition: 0.3s;
+            --vh: 1vh;
+        }
+        .dark-mode {
+            --bg: #1a1a1a;
+            --text: #f4f1ea;
+            --editor-bg: #2d2d2d;
+            --accent: #ebca8a;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            -webkit-overflow-scrolling: touch;
+        }
 
         body {
-            background-color: #0a0a0a;
-            height: 100vh;
-            width: 100vw;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            font-family: 'Crimson Pro', serif;
-        }
-
-        .safe-wrapper {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            padding: calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom));
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .book-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            max-width: 600px;
-            max-height: 1000px;
-            transform-style: preserve-3d;
-            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-            touch-action: none;
-        }
-
-        .cover, .back-cover {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: var(--leather) url('https://www.transparenttextures.com/patterns/leather.png');
-            border-radius: 4px 12px 12px 4px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
-            z-index: 10;
-            transition: transform 1.2s cubic-bezier(0.6, 0, 0.4, 1);
-            transform-origin: left;
-            backface-visibility: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .back-cover {
-            z-index: 1;
-            transform: rotateY(0deg);
-        }
-
-        .cover-border {
-            width: 88%;
-            height: 92%;
-            border: 1px solid var(--gold);
-            position: relative;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            height: calc(var(--vh, 1vh) * 100);
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            transition: background var(--transition), color var(--transition);
+            /* Garante que o conteúdo não fique sob as barras do sistema */
+            padding-top: env(safe-area-inset-top, 20px);
+            padding-bottom: env(safe-area-inset-bottom, 20px);
         }
 
-        .corner { position: absolute; color: var(--gold); font-size: 1.2rem; }
-        .tl { top: 10px; left: 10px; }
-        .tr { top: 10px; right: 10px; transform: rotate(90deg); }
-        .bl { bottom: 10px; left: 10px; transform: rotate(-90deg); }
-        .br { bottom: 10px; right: 10px; transform: rotate(180deg); }
-
-        .cover h1 {
-            font-family: 'UnifrakturMaguntia', cursive;
-            color: var(--gold);
-            font-size: clamp(2.2rem, 10vw, 3.5rem);
-            text-align: center;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-        }
-
-        .divider {
-            width: 50%;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--gold), transparent);
-            margin: 20px 0;
-        }
-
-        .page {
-            position: absolute;
-            width: 99%;
-            height: 99%;
-            background: var(--paper) url('https://www.transparenttextures.com/patterns/parchment.png');
-            padding: 20px 25px 20px 45px;
-            border-radius: 0 10px 10px 0;
-            box-shadow: inset 35px 0 60px rgba(0,0,0,0.3);
-            color: var(--ink);
-            z-index: 5;
-            display: flex;
-            flex-direction: column;
-            transform-origin: left;
-            visibility: hidden;
-            overflow: hidden;
-        }
-
-        .book-container.open .page { visibility: visible; }
-        .book-container.open .cover { transform: rotateY(-165deg); }
-        .book-container.at-back .page { visibility: hidden; }
-
-        #content { 
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            width: 100%;
-        }
-
-        #content h1 {
-            font-family: 'UnifrakturMaguntia', cursive;
-            text-align: center;
-            font-size: 2.2rem;
-            margin-top: 10px;
-            color: #4a2c1d;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #content h2 {
-            font-family: 'Crimson Pro', serif;
-            text-align: center;
-            font-size: 1.2rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--gold-dark);
-            height: 30px;
-            margin-bottom: 20px;
-        }
-
-        #content h3 {
-            font-family: 'Crimson Pro', serif;
-            font-weight: 600;
-            font-size: 1.3rem;
-            margin-bottom: 10px;
-            color: var(--ink);
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-            padding-bottom: 5px;
-        }
-
-        .text-body {
-            flex: 1;
-            overflow: hidden;
-            margin-bottom: 10px;
-            mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
-        }
-
-        #content p {
-            margin-bottom: 15px;
-            text-align: justify;
-            line-height: 1.6;
-            font-size: 1.1rem;
-        }
-
-        .credits-list { list-style: none; text-align: center; color: var(--gold); font-family: serif; }
-        .credits-list li { margin: 15px 0; letter-spacing: 1px; }
-        .credits-list b { display: block; font-size: 0.7rem; color: var(--gold-dark); text-transform: uppercase; margin-bottom: 5px; }
-
-        .page-flip { animation: flipEffect 0.6s ease-out; }
-        @keyframes flipEffect { 0% { opacity: 0.7; transform: translateX(8px); } 100% { opacity: 1; transform: translateX(0); } }
-
-        #pg-indicator { 
-            text-align: center; 
-            font-size: 0.7rem; 
-            height: 20px;
-            opacity: 0.5; 
-            font-weight: 600; 
-            letter-spacing: 1px;
-            border-top: 1px solid rgba(0,0,0,0.05);
-            padding-top: 5px;
-        }
-
-        .audio-ctrl {
+        /* Botão Flutuante de Tema */
+        #themeBtn {
             position: fixed;
-            top: 20px;
+            top: calc(env(safe-area-inset-top, 20px) + 15px);
             right: 20px;
-            z-index: 100;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--gold-dark);
-            color: var(--gold);
-            padding: 8px;
+            z-index: 9999;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
-            cursor: pointer;
-            width: 40px;
-            height: 40px;
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: transform 0.1s active;
+        }
+        #themeBtn:active { transform: scale(0.9); }
+
+        #setup {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            text-align: center;
         }
 
-        .sync-badge {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            color: var(--gold);
-            font-size: 0.6rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            opacity: 0.6;
-            z-index: 100;
+        .credits { margin-top: 25px; font-size: 0.85rem; opacity: 0.8; font-weight: bold; }
+        h1 { margin-bottom: 30px; font-size: 2.2rem; letter-spacing: -1px; }
+
+        input {
+            width: 100%;
+            max-width: 320px;
+            padding: 18px;
+            border: 2px solid #ccc;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            background: #fff;
+            outline: none;
+            text-align: center;
+        }
+
+        .btn-main {
+            background-color: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 16px 40px;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        #app {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+        }
+
+        #editor {
+            flex: 1;
+            width: 100%;
+            border: none;
+            padding: 40px 25px;
+            font-size: 1.25rem;
+            line-height: 1.8;
+            font-family: 'Georgia', serif;
+            resize: none;
+            outline: none;
+            background: var(--editor-bg);
+            color: var(--text);
+            transition: background var(--transition), color var(--transition);
+        }
+
+        #status {
+            background: rgba(0,0,0,0.05);
+            padding: 12px 25px;
+            font-size: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        @media (max-height: 500px) {
+            h1, .credits { display: none; }
         }
     </style>
 </head>
 <body>
 
-    <button class="audio-ctrl" id="muteBtn" onclick="toggleMute()">🔊</button>
-    <div class="sync-badge">Together</div>
+    <button id="themeBtn" onclick="toggleTheme()">🌙</button>
 
-    <audio id="snd-cover" src="grosso.mp3" preload="auto"></audio>
-    <audio id="snd-page" src="folhando.mp3" preload="auto"></audio>
+    <div id="setup">
+        <h1>Write Together</h1>
+        <input type="text" id="roomName" placeholder="Enter room name...">
+        <button class="btn-main" onclick="startSession()">Join Session</button>
+        <div class="credits">Made by: @085_Teuzinnm</div>
+    </div>
 
-    <div class="safe-wrapper">
-        <div class="book-container" id="book">
-            
-            <div class="back-cover" id="backCover">
-                <div class="cover-border">
-                    <div class="corner tl">✦</div><div class="corner tr">✦</div>
-                    <div class="corner bl">✦</div><div class="corner br">✦</div>
-                    <h2 style="color: var(--gold); border: none; font-family: 'UnifrakturMaguntia', cursive; font-size: 1.8rem;">Créditos</h2>
-                    <div class="divider"></div>
-                    <ul class="credits-list">
-                        <li><b>Autor & Roteiro</b> @085_Teuzinnn</li>
-                        <li><b>Sincronização</b> Firebase RTDB</li>
-                        <li><b>Interface</b> HTML5 / CSS3 / JS</li>
-                        <li><b>Localização</b> Brasil</li>
-                    </ul>
-                    <p style="color: var(--gold-dark); font-size: 0.6rem; margin-top: 40px; text-align: center;">© 2026 Sob o Sol de Alvorada<br>All Rights Reserved</p>
-                </div>
-            </div>
-
-            <div class="page" id="pageLayer">
-                <div id="content"></div>
-                <div id="pg-indicator"></div>
-            </div>
-
-            <div class="cover" id="frontCover">
-                <div class="cover-border">
-                    <div class="corner tl">✦</div><div class="corner tr">✦</div>
-                    <div class="corner bl">✦</div><div class="corner br">✦</div>
-                    <h1>​O Elo de Ferro</h1>
-                    <div class="divider"></div>
-                    <p style="color: var(--gold); letter-spacing: 5px; font-size: 0.8rem; text-align: center;">LEITURA COLETIVA</p>
-                </div>
-            </div>
-
+    <div id="app">
+        <textarea id="editor" placeholder="Start your story here..."></textarea>
+        <div id="status">
+            <span id="charCount">0 Caractere</span>
+            <span>Sicronizado</span>
         </div>
     </div>
 
-    <script src="capitulos.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    <script>
+        // Ajuste dinâmico para evitar que o teclado esconda o layout
+        const setVh = () => {
+            let vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        };
+        window.addEventListener('resize', setVh);
+        window.addEventListener('orientationchange', setVh);
+        setVh();
 
+        // As tuas credenciais fornecidas
         const firebaseConfig = {
             apiKey: "AIzaSyDthwqD0CGFwDov-zfO-Hx6TD_y3lHsnoc",
             authDomain: "teuzin-apps.firebaseapp.com",
@@ -286,150 +183,51 @@
             appId: "1:695505471506:web:efe322e605af4a30bfb0cb"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const syncRef = ref(db, 'live_book/currentPage');
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        let currentRoom = "";
+        const editor = document.getElementById('editor');
+        const charDisplay = document.getElementById('charCount');
+        const themeBtn = document.getElementById('themeBtn');
 
-        window.updateRemotePage = function(index) {
-            set(syncRef, index);
-        };
-
-        onValue(syncRef, (snapshot) => {
-            const remotePage = snapshot.val();
-            if (remotePage !== null && remotePage !== currentIndex) {
-                currentIndex = remotePage;
-                if (!book.classList.contains('open')) {
-                    book.classList.add('open');
-                    playSnd('cover');
+        function startSession() {
+            const name = document.getElementById('roomName').value.trim();
+            if(!name) return;
+            currentRoom = name;
+            
+            document.getElementById('setup').style.display = 'none';
+            document.getElementById('app').style.display = 'flex';
+            setVh();
+            
+            // Conexão com o Firebase para sincronização em tempo real
+            db.ref('rooms/' + currentRoom).on('value', (snapshot) => {
+                const val = snapshot.val();
+                if (val && val.text !== editor.value) {
+                    const pos = editor.selectionStart;
+                    editor.value = val.text;
+                    editor.setSelectionRange(pos, pos);
+                    updateStats();
                 }
-                render();
-            }
+            });
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            themeBtn.innerText = isDark ? "☀️" : "🌙";
+        }
+
+        function updateStats() {
+            charDisplay.innerText = `${editor.value.length} characters`;
+        }
+
+        editor.addEventListener('input', () => {
+            updateStats();
+            db.ref('rooms/' + currentRoom).set({
+                text: editor.value,
+                lastUpdate: Date.now()
+            });
         });
-    </script>
-
-    <script>
-        let currentIndex = 0;
-        let pages = [];
-        let touchStartX = 0;
-        let touchEndX = 0;
-        let isMuted = false;
-        
-        const book = document.getElementById('book');
-        const content = document.getElementById('content');
-        const sndCover = document.getElementById('snd-cover');
-        const sndPage = document.getElementById('snd-page');
-        const muteBtn = document.getElementById('muteBtn');
-
-        function toggleMute() {
-            isMuted = !isMuted;
-            muteBtn.innerText = isMuted ? '' : '🔊';
-        }
-
-        function playSnd(type) {
-            if (isMuted) return;
-            const s = type === 'cover' ? sndCover : sndPage;
-            s.pause();
-            s.currentTime = 0;
-            const playPromise = s.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(error => {});
-            }
-        }
-
-        function init() {
-            if (typeof rawText !== 'undefined') {
-                pages = rawText.split('___').map(p => p.trim()).filter(p => p.length > 0);
-                render();
-            }
-        }
-
-        function render() {
-            content.classList.remove('page-flip');
-            void content.offsetWidth;
-            content.classList.add('page-flip');
-            
-            const rawHTML = pages[currentIndex];
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(`<div>${rawHTML}</div>`, 'text/html');
-            
-            const h1 = doc.querySelector('h1')?.outerHTML || '';
-            const h2 = doc.querySelector('h2')?.outerHTML || '';
-            const h3 = doc.querySelector('h3')?.outerHTML || '';
-            
-            doc.querySelectorAll('h1, h2, h3').forEach(el => el.remove());
-            const remainingText = doc.body.innerHTML;
-
-            content.innerHTML = `
-                ${h1}
-                ${h2}
-                ${h3}
-                <div class="text-body">
-                    ${remainingText}
-                </div>
-            `;
-
-            document.getElementById('pg-indicator').innerText = `Página ${currentIndex + 1} de ${pages.length}`;
-        }
-
-        function handleSwipe() {
-            const threshold = 50;
-            const swipeL = touchStartX - touchEndX > threshold;
-            const swipeR = touchEndX - touchStartX > threshold;
-
-            if (!book.classList.contains('open')) {
-                if (swipeL) {
-                    book.classList.add('open');
-                    book.classList.remove('at-back');
-                    playSnd('cover');
-                    if(window.updateRemotePage) window.updateRemotePage(0);
-                    render();
-                }
-            } else if (book.classList.contains('at-back')) {
-                if (swipeR) {
-                    book.classList.remove('at-back');
-                    currentIndex = pages.length - 1;
-                    playSnd('page');
-                    if(window.updateRemotePage) window.updateRemotePage(currentIndex);
-                    render();
-                } else if (swipeL) {
-                    book.classList.remove('open');
-                    book.classList.remove('at-back');
-                    playSnd('cover');
-                }
-            } else {
-                if (swipeL) {
-                    if (currentIndex < pages.length - 1) {
-                        currentIndex++;
-                        playSnd('page');
-                        if(window.updateRemotePage) window.updateRemotePage(currentIndex);
-                        render();
-                    } else {
-                        book.classList.add('at-back');
-                        playSnd('page');
-                    }
-                } else if (swipeR) {
-                    if (currentIndex > 0) {
-                        currentIndex--;
-                        playSnd('page');
-                        if(window.updateRemotePage) window.updateRemotePage(currentIndex);
-                        render();
-                    } else {
-                        book.classList.remove('open');
-                        playSnd('cover');
-                    }
-                }
-            }
-        }
-
-        document.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, {passive: true});
-        document.addEventListener('touchend', e => { touchEndX = e.changedTouches[0].screenX; handleSwipe(); }, {passive: true});
-        
-        document.addEventListener('keydown', e => {
-            if (e.key === 'ArrowRight') { touchStartX = 100; touchEndX = 0; handleSwipe(); }
-            if (e.key === 'ArrowLeft') { touchStartX = 0; touchEndX = 100; handleSwipe(); }
-        });
-
-        window.onload = init;
     </script>
 </body>
 </html>
