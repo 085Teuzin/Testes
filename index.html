@@ -19,9 +19,7 @@
             --editor-bg: #2d2d2d;
             --accent: #ebca8a;
         }
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
-
         html, body {
             overflow: hidden;
             position: fixed;
@@ -29,7 +27,6 @@
             height: 100%;
             -webkit-overflow-scrolling: touch;
         }
-
         body {
             background-color: var(--bg);
             color: var(--text);
@@ -38,12 +35,9 @@
             display: flex;
             flex-direction: column;
             transition: background var(--transition), color var(--transition);
-            /* Garante que o conteúdo não fique sob as barras do sistema */
             padding-top: env(safe-area-inset-top, 20px);
             padding-bottom: env(safe-area-inset-bottom, 20px);
         }
-
-        /* Botão Flutuante de Tema */
         #themeBtn {
             position: fixed;
             top: calc(env(safe-area-inset-top, 20px) + 15px);
@@ -61,10 +55,7 @@
             font-size: 1.3rem;
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            transition: transform 0.1s active;
         }
-        #themeBtn:active { transform: scale(0.9); }
-
         #setup {
             flex: 1;
             display: flex;
@@ -74,10 +65,8 @@
             padding: 30px;
             text-align: center;
         }
-
         .credits { margin-top: 25px; font-size: 0.85rem; opacity: 0.8; font-weight: bold; }
         h1 { margin-bottom: 30px; font-size: 2.2rem; letter-spacing: -1px; }
-
         input {
             width: 100%;
             max-width: 320px;
@@ -90,7 +79,6 @@
             outline: none;
             text-align: center;
         }
-
         .btn-main {
             background-color: var(--accent);
             color: #fff;
@@ -101,15 +89,14 @@
             font-weight: bold;
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
         }
-
         #app {
             display: none;
             flex-direction: column;
             height: 100%;
             width: 100%;
         }
-
         #editor {
             flex: 1;
             width: 100%;
@@ -124,17 +111,21 @@
             color: var(--text);
             transition: background var(--transition), color var(--transition);
         }
-
         #status {
             background: rgba(0,0,0,0.05);
             padding: 12px 25px;
             font-size: 0.75rem;
             display: flex;
             justify-content: space-between;
+            align-items: center;
             letter-spacing: 0.5px;
             font-weight: 500;
         }
-
+        .share-link {
+            color: var(--accent);
+            text-decoration: underline;
+            cursor: pointer;
+        }
         @media (max-height: 500px) {
             h1, .credits { display: none; }
         }
@@ -154,8 +145,9 @@
     <div id="app">
         <textarea id="editor" placeholder="Start your story here..."></textarea>
         <div id="status">
-            <span id="charCount">0 Caractere</span>
-            <span>Sicronizado</span>
+            <span id="charCount">0 characters</span>
+            <span class="share-link" onclick="shareRoom()">Share Room</span>
+            <span>Synchronized</span>
         </div>
     </div>
 
@@ -163,7 +155,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <script>
-        // Ajuste dinâmico para evitar que o teclado esconda o layout
         const setVh = () => {
             let vh = window.innerHeight * 0.01;
             document.documentElement.style.setProperty('--vh', `${vh}px`);
@@ -172,7 +163,6 @@
         window.addEventListener('orientationchange', setVh);
         setVh();
 
-        // As tuas credenciais fornecidas
         const firebaseConfig = {
             apiKey: "AIzaSyDthwqD0CGFwDov-zfO-Hx6TD_y3lHsnoc",
             authDomain: "teuzin-apps.firebaseapp.com",
@@ -190,16 +180,16 @@
         const charDisplay = document.getElementById('charCount');
         const themeBtn = document.getElementById('themeBtn');
 
-        function startSession() {
-            const name = document.getElementById('roomName').value.trim();
+        function startSession(roomFromUrl) {
+            const name = roomFromUrl || document.getElementById('roomName').value.trim();
             if(!name) return;
             currentRoom = name;
             
             document.getElementById('setup').style.display = 'none';
+            document.getElementById('themeBtn').style.display = 'none';
             document.getElementById('app').style.display = 'flex';
             setVh();
             
-            // Conexão com o Firebase para sincronização em tempo real
             db.ref('rooms/' + currentRoom).on('value', (snapshot) => {
                 const val = snapshot.val();
                 if (val && val.text !== editor.value) {
@@ -221,6 +211,23 @@
             charDisplay.innerText = `${editor.value.length} characters`;
         }
 
+        function shareRoom() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('room', currentRoom);
+            const shareUrl = url.toString();
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Write Together',
+                    text: 'Join my writing room: ' + currentRoom,
+                    url: shareUrl
+                });
+            } else {
+                navigator.clipboard.writeText(shareUrl);
+                alert('Link copied to clipboard!');
+            }
+        }
+
         editor.addEventListener('input', () => {
             updateStats();
             db.ref('rooms/' + currentRoom).set({
@@ -228,6 +235,14 @@
                 lastUpdate: Date.now()
             });
         });
+
+        window.onload = () => {
+            const params = new URLSearchParams(window.location.search);
+            const roomParam = params.get('room');
+            if (roomParam) {
+                startSession(roomParam);
+            }
+        };
     </script>
 </body>
 </html>
