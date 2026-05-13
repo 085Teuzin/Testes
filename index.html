@@ -3,166 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Write Together - Made By: @085_Teuzinnn</title>
+    <title>Papel Coletivo - Made By: @085_Teuzinnn</title>
     <style>
         :root {
-            --bg: #f4f1ea;
-            --text: #333;
-            --editor-bg: #fff;
-            --accent: #3d3d3d;
-            --transition: 0.3s;
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --text: #e0e0e0;
+            --accent: #ffca28;
             --vh: 1vh;
         }
-        .dark-mode {
-            --bg: #1a1a1a;
-            --text: #f4f1ea;
-            --editor-bg: #2d2d2d;
-            --accent: #ebca8a;
+        .light-theme {
+            --bg: #f5f5f5;
+            --surface: #ffffff;
+            --text: #212121;
+            --accent: #f57c00;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body {
-            overflow: hidden;
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            -webkit-overflow-scrolling: touch;
-        }
-        body {
-            background-color: var(--bg);
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        html, body { 
+            overflow: hidden; 
+            position: fixed; 
+            width: 100%; 
+            height: 100%; 
+            background: var(--bg); 
             color: var(--text);
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            height: calc(var(--vh, 1vh) * 100);
-            display: flex;
-            flex-direction: column;
-            transition: background var(--transition), color var(--transition);
-            padding-top: env(safe-area-inset-top, 20px);
-            padding-bottom: env(safe-area-inset-bottom, 20px);
-        }
-        #themeBtn {
-            position: fixed;
-            top: calc(env(safe-area-inset-top, 20px) + 15px);
-            right: 20px;
-            z-index: 9999;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: var(--accent);
-            color: var(--bg);
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            font-family: 'Segoe UI', Roboto, sans-serif;
         }
         #setup {
-            flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 30px;
+            height: 100%;
+            padding: 20px;
             text-align: center;
         }
-        .credits { margin-top: 25px; font-size: 0.85rem; opacity: 0.8; font-weight: bold; }
-        h1 { margin-bottom: 30px; font-size: 2.2rem; letter-spacing: -1px; }
+        h1 { font-size: 2.5rem; margin-bottom: 10px; color: var(--accent); }
+        .input-group { width: 100%; max-width: 400px; }
         input {
             width: 100%;
-            max-width: 320px;
-            padding: 18px;
-            border: 2px solid #ccc;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            font-size: 1.1rem;
-            background: #fff;
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid var(--surface);
+            background: var(--surface);
+            color: var(--text);
+            margin-bottom: 15px;
+            font-size: 1rem;
             outline: none;
-            text-align: center;
         }
-        .btn-main {
-            background-color: var(--accent);
-            color: #fff;
+        button {
+            padding: 15px 30px;
+            border-radius: 12px;
             border: none;
-            padding: 16px 40px;
-            border-radius: 15px;
-            font-size: 1.1rem;
+            background: var(--accent);
+            color: #000;
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            margin-bottom: 10px;
+            width: 100%;
+            max-width: 400px;
         }
         #app {
             display: none;
             flex-direction: column;
-            height: 100%;
-            width: 100%;
+            height: calc(var(--vh, 1vh) * 100);
+        }
+        header {
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--surface);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            background: var(--surface);
+            padding: 8px 15px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .tool-btn {
+            background: rgba(255,255,255,0.05);
+            color: var(--text);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            width: auto;
         }
         #editor {
             flex: 1;
             width: 100%;
+            padding: 20px;
             border: none;
-            padding: 40px 25px;
-            font-size: 1.25rem;
-            line-height: 1.8;
-            font-family: 'Georgia', serif;
-            resize: none;
             outline: none;
-            background: var(--editor-bg);
+            background: var(--bg);
             color: var(--text);
-            transition: background var(--transition), color var(--transition);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            resize: none;
+            font-family: 'Georgia', serif;
         }
-        #status {
-            background: rgba(0,0,0,0.05);
-            padding: 12px 25px;
-            font-size: 0.75rem;
+        #chat-container {
+            position: absolute;
+            bottom: 60px;
+            right: 15px;
+            width: 280px;
+            height: 350px;
+            background: var(--surface);
+            border-radius: 15px;
+            display: none;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+        #messages { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.85rem; }
+        .msg { margin-bottom: 8px; padding: 5px 10px; background: rgba(255,255,255,0.05); border-radius: 8px; }
+        footer {
+            padding: 10px 15px;
+            background: var(--surface);
             display: flex;
             justify-content: space-between;
+            font-size: 0.75rem;
             align-items: center;
-            letter-spacing: 0.5px;
-            font-weight: 500;
         }
-        .share-link {
-            color: var(--accent);
-            text-decoration: underline;
-            cursor: pointer;
-        }
-        @media (max-height: 500px) {
-            h1, .credits { display: none; }
-        }
+        .active { display: flex !important; }
     </style>
 </head>
 <body>
 
-    <button id="themeBtn" onclick="toggleTheme()">🌙</button>
-
     <div id="setup">
-        <h1>Write Together</h1>
-        <input type="text" id="roomName" placeholder="Enter room name...">
-        <button class="btn-main" onclick="startSession()">Join Session</button>
-        <div class="credits">Made by: @085_Teuzinnm</div>
+        <h1>Papel Coletivo</h1>
+        <div class="input-group">
+            <input type="text" id="userName" placeholder="Seu apelido">
+            <input type="text" id="roomName" placeholder="Nome da sala">
+            <button onclick="joinRoom()">Criar / Entrar</button>
+        </div>
     </div>
 
     <div id="app">
-        <textarea id="editor" placeholder="Start your story here..."></textarea>
-        <div id="status">
-            <span id="charCount">0 characters</span>
-            <span class="share-link" onclick="shareRoom()">Share Room</span>
-            <span>Synchronized</span>
+        <header>
+            <span id="roomTitle" style="font-weight: bold;"></span>
+            <div style="display: flex; gap: 10px;">
+                <button class="tool-btn" onclick="toggleTheme()">兼</button>
+                <button class="tool-btn" onclick="shareRoom()">迫</button>
+                <button class="tool-btn" onclick="toggleChat()">町</button>
+            </div>
+        </header>
+        
+        <div class="toolbar">
+            <button class="tool-btn" onclick="formatText('<h1></h1>')">H1</button>
+            <button class="tool-btn" onclick="formatText('<h2></h2>')">H2</button>
+            <button class="tool-btn" onclick="formatText('<h3></h3>')">H3</button>
+            <button class="tool-btn" onclick="clearText()">ｧｹ</button>
+            <button class="tool-btn" onclick="downloadText()">踏</button>
         </div>
+
+        <textarea id="editor" placeholder="escrever aqui..."></textarea>
+
+        <div id="chat-container">
+            <div id="messages"></div>
+            <input type="text" id="chatInput" placeholder="Mensagem..." style="margin: 10px; width: calc(100% - 20px);">
+        </div>
+
+        <footer>
+            <span id="stats">C: 0 | P: 0</span>
+            <span id="onlineCount">Online: 1</span>
+        </footer>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <script>
-        const setVh = () => {
-            let vh = window.innerHeight * 0.01;
-            document.documentElement.style.setProperty('--vh', `${vh}px`);
-        };
-        window.addEventListener('resize', setVh);
-        window.addEventListener('orientationchange', setVh);
-        setVh();
-
         const firebaseConfig = {
             apiKey: "AIzaSyDthwqD0CGFwDov-zfO-Hx6TD_y3lHsnoc",
             authDomain: "teuzin-apps.firebaseapp.com",
@@ -176,71 +188,165 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         let currentRoom = "";
+        let myUser = "Anônimo";
+        
         const editor = document.getElementById('editor');
-        const charDisplay = document.getElementById('charCount');
-        const themeBtn = document.getElementById('themeBtn');
+        const stats = document.getElementById('stats');
+        const chatInput = document.getElementById('chatInput');
 
-        function startSession(roomFromUrl) {
-            const name = roomFromUrl || document.getElementById('roomName').value.trim();
-            if(!name) return;
-            currentRoom = name;
+        function setVh() {
+            let vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
+        window.addEventListener('resize', setVh);
+        setVh();
+
+        function joinRoom(roomFromUrl) {
+            const nameInput = document.getElementById('roomName').value.trim();
+            const userInp = document.getElementById('userName').value.trim();
             
+            currentRoom = roomFromUrl || nameInput;
+            myUser = userInp || "User_" + Math.floor(Math.random() * 1000);
+
+            if(!currentRoom) return;
+
+            localStorage.setItem('pc_userName', myUser);
+            localStorage.setItem('pc_roomName', currentRoom);
+
             document.getElementById('setup').style.display = 'none';
-            document.getElementById('themeBtn').style.display = 'none';
             document.getElementById('app').style.display = 'flex';
-            setVh();
+            document.getElementById('roomTitle').innerText = "# " + currentRoom;
             
-            db.ref('rooms/' + currentRoom).on('value', (snapshot) => {
-                const val = snapshot.val();
-                if (val && val.text !== editor.value) {
-                    const pos = editor.selectionStart;
-                    editor.value = val.text;
-                    editor.setSelectionRange(pos, pos);
+            initCollaboration();
+        }
+
+        function initCollaboration() {
+            const roomRef = db.ref('rooms/' + currentRoom);
+            
+            roomRef.child('text').on('value', (snap) => {
+                const text = snap.val() || "";
+                if(text !== editor.value) {
+                    const start = editor.selectionStart;
+                    const end = editor.selectionEnd;
+                    editor.value = text;
+                    editor.setSelectionRange(start, end);
                     updateStats();
                 }
             });
-        }
 
-        function toggleTheme() {
-            document.body.classList.toggle('dark-mode');
-            const isDark = document.body.classList.contains('dark-mode');
-            themeBtn.innerText = isDark ? "☀️" : "🌙";
-        }
+            db.ref('chats/' + currentRoom).limitToLast(20).on('child_added', (snap) => {
+                const msg = snap.val();
+                const div = document.createElement('div');
+                div.className = 'msg';
+                div.innerHTML = `<b>${msg.user}:</b> ${msg.text}`;
+                document.getElementById('messages').appendChild(div);
+                document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+            });
 
-        function updateStats() {
-            charDisplay.innerText = `${editor.value.length} characters`;
-        }
+            const presenceRef = db.ref('presence/' + currentRoom).push();
+            presenceRef.set({ user: myUser, active: true });
+            presenceRef.onDisconnect().remove();
 
-        function shareRoom() {
-            const url = new URL(window.location.href);
-            url.searchParams.set('room', currentRoom);
-            const shareUrl = url.toString();
-
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Write Together',
-                    text: 'Join my writing room: ' + currentRoom,
-                    url: shareUrl
-                });
-            } else {
-                navigator.clipboard.writeText(shareUrl);
-                alert('Link copied to clipboard!');
-            }
+            db.ref('presence/' + currentRoom).on('value', (snap) => {
+                document.getElementById('onlineCount').innerText = `Online: ${snap.numChildren()}`;
+            });
         }
 
         editor.addEventListener('input', () => {
             updateStats();
-            db.ref('rooms/' + currentRoom).set({
+            db.ref('rooms/' + currentRoom).update({
                 text: editor.value,
                 lastUpdate: Date.now()
             });
         });
 
+        chatInput.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter' && chatInput.value.trim()) {
+                db.ref('chats/' + currentRoom).push({
+                    user: myUser,
+                    text: chatInput.value,
+                    time: Date.now()
+                });
+                chatInput.value = "";
+            }
+        });
+
+        function updateStats() {
+            const text = editor.value.trim();
+            const chars = text.length;
+            const words = text ? text.split(/\s+/).length : 0;
+            stats.innerText = `C: ${chars} | P: ${words}`;
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+        }
+
+        function toggleChat() {
+            document.getElementById('chat-container').classList.toggle('active');
+        }
+
+        function formatText(tag) {
+            const start = editor.selectionStart;
+            const end = editor.selectionEnd;
+            const text = editor.value;
+            const selected = text.substring(start, end);
+            
+            const midIndex = tag.indexOf('><') + 1;
+            const openTag = tag.substring(0, midIndex);
+            const closeTag = tag.substring(midIndex);
+
+            const newText = text.substring(0, start) + openTag + selected + closeTag + text.substring(end);
+            editor.value = newText;
+            
+            const newCursorPos = start + openTag.length + selected.length;
+            editor.focus();
+            editor.setSelectionRange(newCursorPos, newCursorPos);
+            
+            editor.dispatchEvent(new Event('input'));
+        }
+
+        function clearText() {
+            if(confirm("Limpar todo o papel?")) {
+                editor.value = "";
+                editor.dispatchEvent(new Event('input'));
+            }
+        }
+
+        function downloadText() {
+            const blob = new Blob([editor.value], {type: "text/plain"});
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = `${currentRoom}.txt`;
+            a.click();
+        }
+
+        function shareRoom() {
+            const shareUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(currentRoom)}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Papel Coletivo',
+                    text: `Entre na minha sala de escrita: ${currentRoom}`,
+                    url: shareUrl
+                }).catch(console.error);
+            } else {
+                navigator.clipboard.writeText(shareUrl);
+                alert('Link da sala copiado!');
+            }
+        }
+
         window.onload = () => {
+            const savedUser = localStorage.getItem('pc_userName');
+            const savedRoom = localStorage.getItem('pc_roomName');
+            
+            if(savedUser) document.getElementById('userName').value = savedUser;
+            if(savedRoom) document.getElementById('roomName').value = savedRoom;
+
             const params = new URLSearchParams(window.location.search);
             const roomParam = params.get('room');
             if (roomParam) {
-                startSession(roomParam);
+                joinRoom(roomParam);
             }
         };
     </script>
