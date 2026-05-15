@@ -3,14 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Game - Quaternius Library</title>
+    <title>Quaternius Ultimate Controller</title>
     <style>
         body { margin: 0; outline: none; background: #111; overflow: hidden; font-family: sans-serif; }
         canvas { display: block; }
+        #ui { position: absolute; top: 20px; left: 20px; color: white; pointer-events: none; text-shadow: 1px 1px 2px black; }
         #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 1.5rem; }
+        .controls-hint { font-size: 0.9rem; color: #aaa; }
     </style>
 </head>
 <body>
+    <div id="ui">
+        <h2>Soldier Controller</h2>
+        <div class="controls-hint">
+            WASD: Mover | SHIFT: Correr | ESPAÇO: Pular<br>
+            R: Mortal (Flip) | Q: Soco | E: Chute | F: Acenar
+        </div>
+    </div>
     <div id="loader">Carregando Biblioteca de Animações...</div>
 
     <script type="importmap">
@@ -28,7 +37,7 @@
 
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x1a1a1a);
-        scene.fog = new THREE.Fog(0x1a1a1a, 20, 100);
+        scene.fog = new THREE.Fog(0x1a1a1a, 30, 120);
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -37,7 +46,7 @@
         renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
+        const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
         scene.add(light);
         const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
         dirLight.position.set(-5, 10, 5);
@@ -46,7 +55,7 @@
 
         const floor = new THREE.Mesh(
             new THREE.PlaneGeometry(1000, 1000),
-            new THREE.MeshStandardMaterial({ color: 0x222222 })
+            new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 })
         );
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = true;
@@ -57,26 +66,17 @@
         const actions = {};
         let activeAction;
         const clock = new THREE.Clock();
-        const keys = { w: false, a: false, s: false, d: false };
+        const keys = {};
 
         const loader = new GLTFLoader();
 
-        // USANDO O ARQUIVO GLB DO PACK
         loader.load('UAL1_Standard.glb', (gltf) => {
             player = gltf.scene;
-            player.scale.setScalar(1); 
-            
-            player.traverse(child => {
-                if (child.isMesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
-                }
-            });
-
+            player.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
             scene.add(player);
 
             cameraPivot = new THREE.Group();
-            cameraPivot.position.set(0, 4, -7);
+            cameraPivot.position.set(0, 4, -8);
             player.add(cameraPivot);
 
             cameraTarget = new THREE.Group();
@@ -85,35 +85,43 @@
 
             mixer = new THREE.AnimationMixer(player);
             
-            // Mapeia todas as animações disponíveis no arquivo
             gltf.animations.forEach((clip) => {
-                // Remove o prefixo "Armature|" se existir para facilitar
-                const name = clip.name.replace('Armature|', '').toLowerCase();
+                const name = clip.name.toLowerCase();
                 actions[name] = mixer.clipAction(clip);
-                console.log("Animação encontrada:", name);
+                // Configura animações únicas (que não fazem loop)
+                if (name.includes('jump') || name.includes('punch') || name.includes('kick') || name.includes('flip')) {
+                    actions[name].setLoop(THREE.LoopOnce);
+                    actions[name].clampWhenFinished = true;
+                }
             });
 
-            // Tenta dar play na Idle ou na primeira que encontrar
-            activeAction = actions['idle_loop'] || actions['idle'] || Object.values(actions)[0];
+            activeAction = actions['idle'] || actions['idle_loop'] || Object.values(actions)[0];
             if(activeAction) activeAction.play();
 
             document.getElementById('loader').style.display = 'none';
         });
 
-        function fadeToAction(name) {
-            let targetAction = actions[name];
-            // Caso o nome seja um pouco diferente no pack (ex: Walk_Loop)
-            if(!targetAction && name === 'run') targetAction = actions['walk_loop'] || actions['run_loop'];
-            if(!targetAction && name === 'idle') targetAction = actions['idle_loop'];
-
-            if (!targetAction || activeAction === targetAction) return;
-            targetAction.reset().fadeIn(0.2).play();
-            activeAction.fadeOut(0.2);
-            activeAction = targetAction;
+        function fadeToAction(name, duration = 0.2) {
+            const nextAction = actions[name];
+            if (!nextAction || activeAction === nextAction) return;
+            nextAction.reset().fadeIn(duration).play();
+            activeAction.fadeOut(duration);
+            activeAction = nextAction;
         }
 
-        window.addEventListener('keydown', (e) => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; });
-        window.addEventListener('keyup', (e) => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false; });
+        // Sistema de INPUT
+        window.addEventListener('keydown', (e) => { keys[e.code] = true; handleInstantActions(e.code); });
+        window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+        function handleInstantActions(code) {
+            if (!player) return;
+            // Botões de Ação Única
+            if (code === 'Space') fadeToAction('jump');
+            if (code === 'KeyQ') fadeToAction('punch');
+            if (code === 'KeyE') fadeToAction('kick');
+            if (code === 'KeyR') fadeToAction('flip'); // Mortal
+            if (code === 'KeyF') fadeToAction('wave');
+        }
 
         function animate() {
             requestAnimationFrame(animate);
@@ -121,20 +129,39 @@
             if (mixer) mixer.update(delta);
 
             if (player) {
-                const moveSpeed = 0.15;
+                // Configurações de velocidade
+                const isRunning = keys['ShiftLeft'] || keys['ShiftRight'];
+                const moveSpeed = isRunning ? 0.3 : 0.12;
                 const rotSpeed = 0.05;
-                const isMoving = keys.w || keys.a || keys.s || keys.d;
 
-                if (isMoving) {
-                    fadeToAction('run');
-                    if (keys.w) player.translateZ(moveSpeed);
-                    if (keys.s) player.translateZ(-moveSpeed);
-                    if (keys.a) player.rotation.y += rotSpeed;
-                    if (keys.d) player.rotation.y -= rotSpeed;
-                } else {
-                    fadeToAction('idle');
+                const movingForward = keys['KeyW'];
+                const movingBackward = keys['KeyS'];
+                const turningLeft = keys['KeyA'];
+                const turningRight = keys['KeyD'];
+                const isMoving = movingForward || movingBackward || turningLeft || turningRight;
+
+                // Lógica de Troca de Animação de Movimento
+                if (activeAction && (activeAction._clip.name.includes('loop') || activeAction._clip.name.includes('idle'))) {
+                    if (isMoving) {
+                        if (isRunning) fadeToAction('run_loop');
+                        else fadeToAction('walk_loop');
+                    } else {
+                        fadeToAction('idle_loop');
+                    }
                 }
 
+                // Se uma animação única acabou, volta para o Idle
+                if (activeAction && activeAction.paused) {
+                    fadeToAction('idle_loop');
+                }
+
+                // Movimentação Física
+                if (movingForward) player.translateZ(moveSpeed);
+                if (movingBackward) player.translateZ(-moveSpeed);
+                if (turningLeft) player.rotation.y += rotSpeed;
+                if (turningRight) player.rotation.y -= rotSpeed;
+
+                // Câmera Suave
                 const goalPos = new THREE.Vector3();
                 cameraPivot.getWorldPosition(goalPos);
                 const lookPos = new THREE.Vector3();
