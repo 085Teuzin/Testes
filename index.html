@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Game - Mixamo Edition</title>
+    <title>3D Game - Quaternius Library</title>
     <style>
         body { margin: 0; outline: none; background: #111; overflow: hidden; font-family: sans-serif; }
         canvas { display: block; }
-        #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 1.5rem; z-index: 10; }
+        #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 1.5rem; }
     </style>
 </head>
 <body>
-    <div id="loader">Carregando Personagem Animado...</div>
+    <div id="loader">Carregando Biblioteca de Animações...</div>
 
     <script type="importmap">
         {
@@ -24,7 +24,7 @@
 
     <script type="module">
         import * as THREE from 'three';
-        import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x1a1a1a);
@@ -46,7 +46,7 @@
 
         const floor = new THREE.Mesh(
             new THREE.PlaneGeometry(1000, 1000),
-            new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 })
+            new THREE.MeshStandardMaterial({ color: 0x222222 })
         );
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = true;
@@ -59,12 +59,12 @@
         const clock = new THREE.Clock();
         const keys = { w: false, a: false, s: false, d: false };
 
-        const fbxLoader = new FBXLoader();
+        const loader = new GLTFLoader();
 
-        // 1. Carregamos o arquivo IDLE primeiro (ele contém o corpo e a pose inicial)
-        fbxLoader.load('Orc Idle.fbx', (object) => {
-            player = object;
-            player.scale.setScalar(0.025); // Ajuste de escala (FBX costuma vir muito grande)
+        // USANDO O ARQUIVO GLB DO PACK
+        loader.load('UAL1_Standard.glb', (gltf) => {
+            player = gltf.scene;
+            player.scale.setScalar(1); 
             
             player.traverse(child => {
                 if (child.isMesh) {
@@ -75,35 +75,41 @@
 
             scene.add(player);
 
-            // Configuração da Câmera Terceira Pessoa
             cameraPivot = new THREE.Group();
-            cameraPivot.position.set(0, 4, -7); // Atrás e acima
+            cameraPivot.position.set(0, 4, -7);
             player.add(cameraPivot);
 
             cameraTarget = new THREE.Group();
-            cameraTarget.position.set(0, 2, 5); // Onde a câmera olha (frente)
+            cameraTarget.position.set(0, 2, 5);
             player.add(cameraTarget);
 
             mixer = new THREE.AnimationMixer(player);
             
-            // Registra a animação Idle
-            actions['idle'] = mixer.clipAction(player.animations[0]);
-            actions['idle'].play();
-            activeAction = actions['idle'];
-
-            // 2. Carrega a animação de correr separadamente
-            fbxLoader.load('Medium Run.fbx', (animObj) => {
-                actions['run'] = mixer.clipAction(animObj.animations[0]);
-                document.getElementById('loader').style.display = 'none';
+            // Mapeia todas as animações disponíveis no arquivo
+            gltf.animations.forEach((clip) => {
+                // Remove o prefixo "Armature|" se existir para facilitar
+                const name = clip.name.replace('Armature|', '').toLowerCase();
+                actions[name] = mixer.clipAction(clip);
+                console.log("Animação encontrada:", name);
             });
+
+            // Tenta dar play na Idle ou na primeira que encontrar
+            activeAction = actions['idle_loop'] || actions['idle'] || Object.values(actions)[0];
+            if(activeAction) activeAction.play();
+
+            document.getElementById('loader').style.display = 'none';
         });
 
         function fadeToAction(name) {
-            if (!actions[name] || activeAction === actions[name]) return;
-            const nextAction = actions[name];
-            nextAction.reset().fadeIn(0.2).play();
+            let targetAction = actions[name];
+            // Caso o nome seja um pouco diferente no pack (ex: Walk_Loop)
+            if(!targetAction && name === 'run') targetAction = actions['walk_loop'] || actions['run_loop'];
+            if(!targetAction && name === 'idle') targetAction = actions['idle_loop'];
+
+            if (!targetAction || activeAction === targetAction) return;
+            targetAction.reset().fadeIn(0.2).play();
             activeAction.fadeOut(0.2);
-            activeAction = nextAction;
+            activeAction = targetAction;
         }
 
         window.addEventListener('keydown', (e) => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; });
@@ -129,16 +135,13 @@
                     fadeToAction('idle');
                 }
 
-                // Câmera segue o jogador
                 const goalPos = new THREE.Vector3();
                 cameraPivot.getWorldPosition(goalPos);
                 const lookPos = new THREE.Vector3();
                 cameraTarget.getWorldPosition(lookPos);
-
                 camera.position.lerp(goalPos, 0.1);
                 camera.lookAt(lookPos);
             }
-
             renderer.render(scene, camera);
         }
 
