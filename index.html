@@ -3,20 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Third Person Runner</title>
+    <title>3D Game - Mixamo Edition</title>
     <style>
-        body { margin: 0; outline: none; background: #000; overflow: hidden; font-family: sans-serif; }
+        body { margin: 0; outline: none; background: #111; overflow: hidden; font-family: sans-serif; }
         canvas { display: block; }
-        #ui { position: absolute; top: 20px; left: 20px; color: white; pointer-events: none; }
-        #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; }
+        #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 1.5rem; z-index: 10; }
     </style>
 </head>
 <body>
-    <div id="ui">
-        <h1>Third Person Test</h1>
-        <p>W, A, S, D para Correr</p>
-    </div>
-    <div id="loader">Carregando Recursos...</div>
+    <div id="loader">Carregando Personagem Animado...</div>
 
     <script type="importmap">
         {
@@ -29,12 +24,11 @@
 
     <script type="module">
         import * as THREE from 'three';
-        import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
         import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x202020);
-        scene.fog = new THREE.Fog(0x202020, 20, 100);
+        scene.background = new THREE.Color(0x1a1a1a);
+        scene.fog = new THREE.Fog(0x1a1a1a, 20, 100);
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -46,59 +40,70 @@
         const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
         scene.add(light);
         const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
-        dirLight.position.set(5, 10, 5);
+        dirLight.position.set(-5, 10, 5);
         dirLight.castShadow = true;
         scene.add(dirLight);
 
-        const meshFloor = new THREE.Mesh(
+        const floor = new THREE.Mesh(
             new THREE.PlaneGeometry(1000, 1000),
-            new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.8 })
+            new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 })
         );
-        meshFloor.rotation.x = -Math.PI / 2;
-        meshFloor.receiveShadow = true;
-        scene.add(meshFloor);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+        scene.add(new THREE.GridHelper(1000, 100, 0x444444, 0x333333));
 
-        const grid = new THREE.GridHelper(1000, 100, 0x444444, 0x444444);
-        scene.add(grid);
-
-        let mixer, player;
+        let mixer, player, cameraPivot, cameraTarget;
         const actions = {};
         let activeAction;
         const clock = new THREE.Clock();
         const keys = { w: false, a: false, s: false, d: false };
 
-        const objLoader = new OBJLoader();
         const fbxLoader = new FBXLoader();
 
-        objLoader.load('FinalBaseMesh.obj', (obj) => {
-            player = obj;
+        // 1. Carregamos o arquivo IDLE primeiro (ele contém o corpo e a pose inicial)
+        fbxLoader.load('Orc Idle.fbx', (object) => {
+            player = object;
+            player.scale.setScalar(0.025); // Ajuste de escala (FBX costuma vir muito grande)
+            
             player.traverse(child => {
                 if (child.isMesh) {
                     child.castShadow = true;
-                    child.material = new THREE.MeshStandardMaterial({ color: 0x555555 });
+                    child.receiveShadow = true;
                 }
             });
+
             scene.add(player);
-            
+
+            // Configuração da Câmera Terceira Pessoa
+            cameraPivot = new THREE.Group();
+            cameraPivot.position.set(0, 4, -7); // Atrás e acima
+            player.add(cameraPivot);
+
+            cameraTarget = new THREE.Group();
+            cameraTarget.position.set(0, 2, 5); // Onde a câmera olha (frente)
+            player.add(cameraTarget);
+
             mixer = new THREE.AnimationMixer(player);
+            
+            // Registra a animação Idle
+            actions['idle'] = mixer.clipAction(player.animations[0]);
+            actions['idle'].play();
+            activeAction = actions['idle'];
 
-            fbxLoader.load('Orc Idle.fbx', (anim) => {
-                actions['idle'] = mixer.clipAction(anim.animations[0]);
-                actions['idle'].play();
-                activeAction = actions['idle'];
+            // 2. Carrega a animação de correr separadamente
+            fbxLoader.load('Medium Run.fbx', (animObj) => {
+                actions['run'] = mixer.clipAction(animObj.animations[0]);
                 document.getElementById('loader').style.display = 'none';
-            });
-
-            fbxLoader.load('Medium Run.fbx', (anim) => {
-                actions['run'] = mixer.clipAction(anim.animations[0]);
             });
         });
 
         function fadeToAction(name) {
             if (!actions[name] || activeAction === actions[name]) return;
-            actions[name].reset().fadeIn(0.2).play();
+            const nextAction = actions[name];
+            nextAction.reset().fadeIn(0.2).play();
             activeAction.fadeOut(0.2);
-            activeAction = actions[name];
+            activeAction = nextAction;
         }
 
         window.addEventListener('keydown', (e) => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; });
@@ -110,24 +115,28 @@
             if (mixer) mixer.update(delta);
 
             if (player) {
-                const speed = 0.15;
-                const rotationSpeed = 0.05;
+                const moveSpeed = 0.15;
+                const rotSpeed = 0.05;
                 const isMoving = keys.w || keys.a || keys.s || keys.d;
 
                 if (isMoving) {
                     fadeToAction('run');
-                    if (keys.w) player.translateZ(speed);
-                    if (keys.s) player.translateZ(-speed);
-                    if (keys.a) player.rotation.y += rotationSpeed;
-                    if (keys.d) player.rotation.y -= rotationSpeed;
+                    if (keys.w) player.translateZ(moveSpeed);
+                    if (keys.s) player.translateZ(-moveSpeed);
+                    if (keys.a) player.rotation.y += rotSpeed;
+                    if (keys.d) player.rotation.y -= rotSpeed;
                 } else {
                     fadeToAction('idle');
                 }
 
-                const relativeCameraOffset = new THREE.Vector3(0, 3, -8);
-                const cameraOffset = relativeCameraOffset.applyMatrix4(player.matrixWorld);
-                camera.position.lerp(cameraOffset, 0.1);
-                camera.lookAt(player.position.x, player.position.y + 1.5, player.position.z);
+                // Câmera segue o jogador
+                const goalPos = new THREE.Vector3();
+                cameraPivot.getWorldPosition(goalPos);
+                const lookPos = new THREE.Vector3();
+                cameraTarget.getWorldPosition(lookPos);
+
+                camera.position.lerp(goalPos, 0.1);
+                camera.lookAt(lookPos);
             }
 
             renderer.render(scene, camera);
