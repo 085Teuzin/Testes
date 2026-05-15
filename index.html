@@ -3,24 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quaternius Ultimate Controller</title>
+    <title>Soldier Game Fixed</title>
     <style>
         body { margin: 0; outline: none; background: #111; overflow: hidden; font-family: sans-serif; }
         canvas { display: block; }
-        #ui { position: absolute; top: 20px; left: 20px; color: white; pointer-events: none; text-shadow: 1px 1px 2px black; }
-        #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 1.5rem; }
-        .controls-hint { font-size: 0.9rem; color: #aaa; }
+        #ui { position: absolute; top: 20px; left: 20px; color: white; pointer-events: none; text-shadow: 1px 1px 2px black; z-index: 10; }
+        #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 1.5rem; z-index: 10; }
+        .hint { font-size: 0.8rem; color: #ccc; margin-top: 5px; }
     </style>
 </head>
 <body>
     <div id="ui">
-        <h2>Soldier Controller</h2>
-        <div class="controls-hint">
-            WASD: Mover | SHIFT: Correr | ESPAÇO: Pular<br>
-            R: Mortal (Flip) | Q: Soco | E: Chute | F: Acenar
-        </div>
+        <strong>CONTROLES:</strong>
+        <div class="hint">WASD: Mover | SHIFT: Correr | ESPAÇO: Pular</div>
+        <div class="hint">Q: Soco | E: Chute | R: Mortal | F: Acenar</div>
     </div>
-    <div id="loader">Carregando Biblioteca de Animações...</div>
+    <div id="loader">Carregando arquivo GLB...</div>
 
     <script type="importmap">
         {
@@ -37,7 +35,7 @@
 
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x1a1a1a);
-        scene.fog = new THREE.Fog(0x1a1a1a, 30, 120);
+        scene.fog = new THREE.Fog(0x1a1a1a, 20, 120);
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -55,7 +53,7 @@
 
         const floor = new THREE.Mesh(
             new THREE.PlaneGeometry(1000, 1000),
-            new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 })
+            new THREE.MeshStandardMaterial({ color: 0x222222 })
         );
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = true;
@@ -70,11 +68,21 @@
 
         const loader = new GLTFLoader();
 
+        // IMPORTANTE: Certifique-se que o nome do arquivo abaixo é exatamente o que você tem na pasta
         loader.load('UAL1_Standard.glb', (gltf) => {
             player = gltf.scene;
-            player.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
+            player.scale.setScalar(1); 
+            
+            player.traverse(child => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
             scene.add(player);
 
+            // Setup Câmera
             cameraPivot = new THREE.Group();
             cameraPivot.position.set(0, 4, -8);
             player.add(cameraPivot);
@@ -85,43 +93,57 @@
 
             mixer = new THREE.AnimationMixer(player);
             
+            // Mapeamento inteligente de animações
             gltf.animations.forEach((clip) => {
-                const name = clip.name.toLowerCase();
-                actions[name] = mixer.clipAction(clip);
-                // Configura animações únicas (que não fazem loop)
-                if (name.includes('jump') || name.includes('punch') || name.includes('kick') || name.includes('flip')) {
-                    actions[name].setLoop(THREE.LoopOnce);
-                    actions[name].clampWhenFinished = true;
+                const rawName = clip.name.toLowerCase();
+                const action = mixer.clipAction(clip);
+                
+                // Salva a animação original e também apelidos simplificados
+                actions[rawName] = action;
+
+                if (rawName.includes('idle')) actions['idle'] = action;
+                if (rawName.includes('walk')) actions['walk'] = action;
+                if (rawName.includes('run')) actions['run'] = action;
+                if (rawName.includes('jump')) {
+                    action.setLoop(THREE.LoopOnce);
+                    action.clampWhenFinished = true;
+                    actions['jump'] = action;
                 }
+                if (rawName.includes('punch')) { action.setLoop(THREE.LoopOnce); actions['punch'] = action; }
+                if (rawName.includes('kick')) { action.setLoop(THREE.LoopOnce); actions['kick'] = action; }
+                if (rawName.includes('flip')) { action.setLoop(THREE.LoopOnce); actions['flip'] = action; }
+                if (rawName.includes('wave')) { action.setLoop(THREE.LoopOnce); actions['wave'] = action; }
             });
 
-            activeAction = actions['idle'] || actions['idle_loop'] || Object.values(actions)[0];
+            // Play Inicial
+            activeAction = actions['idle'] || Object.values(actions)[0];
             if(activeAction) activeAction.play();
 
             document.getElementById('loader').style.display = 'none';
+            console.log("Animações carregadas:", Object.keys(actions));
+        }, undefined, (err) => {
+            document.getElementById('loader').innerText = "Erro ao carregar UAL1_Standard.glb";
+            console.error(err);
         });
 
         function fadeToAction(name, duration = 0.2) {
             const nextAction = actions[name];
             if (!nextAction || activeAction === nextAction) return;
             nextAction.reset().fadeIn(duration).play();
-            activeAction.fadeOut(duration);
+            if(activeAction) activeAction.fadeOut(duration);
             activeAction = nextAction;
         }
 
-        // Sistema de INPUT
-        window.addEventListener('keydown', (e) => { keys[e.code] = true; handleInstantActions(e.code); });
+        window.addEventListener('keydown', (e) => { 
+            keys[e.code] = true; 
+            // Ações instantâneas
+            if (e.code === 'Space') fadeToAction('jump');
+            if (e.code === 'KeyQ') fadeToAction('punch');
+            if (e.code === 'KeyE') fadeToAction('kick');
+            if (e.code === 'KeyR') fadeToAction('flip');
+            if (e.code === 'KeyF') fadeToAction('wave');
+        });
         window.addEventListener('keyup', (e) => { keys[e.code] = false; });
-
-        function handleInstantActions(code) {
-            if (!player) return;
-            // Botões de Ação Única
-            if (code === 'Space') fadeToAction('jump');
-            if (code === 'KeyQ') fadeToAction('punch');
-            if (code === 'KeyE') fadeToAction('kick');
-            if (code === 'KeyR') fadeToAction('flip'); // Mortal
-            if (code === 'KeyF') fadeToAction('wave');
-        }
 
         function animate() {
             requestAnimationFrame(animate);
@@ -129,39 +151,30 @@
             if (mixer) mixer.update(delta);
 
             if (player) {
-                // Configurações de velocidade
                 const isRunning = keys['ShiftLeft'] || keys['ShiftRight'];
-                const moveSpeed = isRunning ? 0.3 : 0.12;
+                const moveSpeed = isRunning ? 0.25 : 0.12;
                 const rotSpeed = 0.05;
 
-                const movingForward = keys['KeyW'];
-                const movingBackward = keys['KeyS'];
-                const turningLeft = keys['KeyA'];
-                const turningRight = keys['KeyD'];
-                const isMoving = movingForward || movingBackward || turningLeft || turningRight;
+                const isMoving = keys['KeyW'] || keys['KeyS'] || keys['KeyA'] || keys['KeyD'];
 
-                // Lógica de Troca de Animação de Movimento
-                if (activeAction && (activeAction._clip.name.includes('loop') || activeAction._clip.name.includes('idle'))) {
+                // Só troca entre walk/run/idle se não estiver fazendo uma animação única (como soco ou pulo)
+                if (activeAction && !activeAction.isRunning() || 
+                    (activeAction._clip.name.toLowerCase().includes('idle') || 
+                     activeAction._clip.name.toLowerCase().includes('walk') || 
+                     activeAction._clip.name.toLowerCase().includes('run'))) {
+                    
                     if (isMoving) {
-                        if (isRunning) fadeToAction('run_loop');
-                        else fadeToAction('walk_loop');
+                        fadeToAction(isRunning ? 'run' : 'walk');
                     } else {
-                        fadeToAction('idle_loop');
+                        fadeToAction('idle');
                     }
                 }
 
-                // Se uma animação única acabou, volta para o Idle
-                if (activeAction && activeAction.paused) {
-                    fadeToAction('idle_loop');
-                }
+                if (keys['KeyW']) player.translateZ(moveSpeed);
+                if (keys['KeyS']) player.translateZ(-moveSpeed);
+                if (keys['KeyA']) player.rotation.y += rotSpeed;
+                if (keys['KeyD']) player.rotation.y -= rotSpeed;
 
-                // Movimentação Física
-                if (movingForward) player.translateZ(moveSpeed);
-                if (movingBackward) player.translateZ(-moveSpeed);
-                if (turningLeft) player.rotation.y += rotSpeed;
-                if (turningRight) player.rotation.y -= rotSpeed;
-
-                // Câmera Suave
                 const goalPos = new THREE.Vector3();
                 cameraPivot.getWorldPosition(goalPos);
                 const lookPos = new THREE.Vector3();
