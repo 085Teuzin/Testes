@@ -965,8 +965,9 @@
             lastPlayedWinner = "";
             hasPlayedGoSound = false;
             selectingWildCardIndex = null;
+            const nextStartingPlayer = currentGameState ? getNextPlayer(currentGameState.turn) : "p1";
             update(roomRef, {
-                turn: "p1",
+                turn: nextStartingPlayer,
                 status: "IN_PROGRESS",
                 winner: "",
                 customData: getInitialCustomGameData()
@@ -1065,15 +1066,13 @@
             boxP2.classList.toggle("active-turn", state.turn === "p2");
             boxP3.classList.toggle("active-turn", state.turn === "p3");
 
-            const p1Online = connected.p1 === "online";
-            const p2Online = connected.p2 === "online";
-            const p3Online = connected.p3 === "online";
+            const activeOnlineCount = ["p1", "p2", "p3"].filter(p => connected[p] === "online").length;
 
-            if (!p1Online || !p2Online || !p3Online) {
+            if (activeOnlineCount < 2) {
                 let missing = [];
-                if (!p1Online) missing.push("Teuzin");
-                if (!p2Online) missing.push("Niella");
-                if (!p3Online) missing.push("Sasa");
+                if (connected.p1 !== "online") missing.push("Teuzin");
+                if (connected.p2 !== "online") missing.push("Niella");
+                if (connected.p3 !== "online") missing.push("Sasa");
                 statusText.textContent = `Aguardando: ${missing.join(", ")}...`;
                 hasPlayedGoSound = false;
             } else {
@@ -1161,10 +1160,10 @@
         }
 
         function canMakeMove() {
+            const connected = currentGameState?.connected || {};
+            const activeOnlineCount = ["p1", "p2", "p3"].filter(p => connected[p] === "online").length;
             return isMyTurn() &&
-                currentGameState?.connected?.p1 === "online" &&
-                currentGameState?.connected?.p2 === "online" &&
-                currentGameState?.connected?.p3 === "online" &&
+                activeOnlineCount >= 2 &&
                 !currentGameState?.winner &&
                 !currentGameState?.customData?.pendingChallenge;
         }
@@ -1296,8 +1295,9 @@
             const card = myHand[index];
             const topCard = customData.discard[customData.discard.length - 1];
 
-            if (customData.drawnCardIndex !== null && customData.drawnCardIndex !== undefined) {
-                if (index !== customData.drawnCardIndex) return;
+            const drawnIdx = customData.drawnCardIndex;
+            if (drawnIdx !== null && drawnIdx !== undefined && drawnIdx !== false) {
+                if (index !== drawnIdx) return;
             }
 
             if (!isCardPlayable(card, topCard, customData.currentColor, customData.pendingDraw || 0, customData.pendingDrawType || "", myHand)) return;
@@ -1339,11 +1339,14 @@
             }
 
             let skipTurnCount = 1;
+            let isPlus4 = false;
+
             if (playedCard.value === '+2') {
                 customData.pendingDraw = (customData.pendingDraw || 0) + 2;
                 customData.pendingDrawType = '+2';
                 customData.lastAudio = { type: "m2", timestamp: Date.now() };
             } else if (playedCard.value === '+4') {
+                isPlus4 = true;
                 customData.pendingDraw = (customData.pendingDraw || 0) + 4;
                 customData.pendingDrawType = '+4';
                 customData.lastAudio = { type: "m4", timestamp: Date.now() };
@@ -1360,13 +1363,16 @@
             }
 
             updateGameData(customData);
-            switchTurn(skipTurnCount);
+            if (!isPlus4) {
+                switchTurn(skipTurnCount);
+            }
         }
 
         window.handleDrawDeck = function() {
             if (!canMakeMove()) return;
             const customData = JSON.parse(JSON.stringify(currentGameState.customData));
-            if (customData.drawnCardIndex !== null && customData.drawnCardIndex !== undefined) return;
+            const drawnIdx = customData.drawnCardIndex;
+            if (drawnIdx !== null && drawnIdx !== undefined && drawnIdx !== false) return;
 
             const myHand = customData[`${myID}Hand`] || [];
             let deck = customData.deck || [];
@@ -1394,6 +1400,7 @@
                 customData.discard = discard;
                 customData[`${myID}Hand`] = myHand;
                 customData[`${myID}UnoProtected`] = false;
+                customData.drawnCardIndex = null;
                 updateGameData(customData);
                 switchTurn(1);
             } else {
@@ -1434,7 +1441,8 @@
         window.handlePassTurn = function() {
             if (!canMakeMove()) return;
             const customData = JSON.parse(JSON.stringify(currentGameState.customData));
-            if (customData.drawnCardIndex === null || customData.drawnCardIndex === undefined) return;
+            const drawnIdx = customData.drawnCardIndex;
+            if (drawnIdx === null || drawnIdx === undefined || drawnIdx === false) return;
 
             customData.drawnCardIndex = null;
             updateGameData(customData);
@@ -1472,7 +1480,7 @@
                     drawCardsFor(challenge.challenger, 6);
                 }
             } else {
-                drawCardsFor(challenge.challenger, 4);
+                drawCardsFor(challenge.challenger, customData.pendingDraw || 4);
             }
 
             customData.deck = deck;
@@ -1481,6 +1489,7 @@
             customData.pendingDrawType = "";
             customData.pendingChallenge = null;
             updateGameData(customData);
+            switchTurn(1);
         };
 
         window.handleUnoButtonClick = function() {
@@ -1580,11 +1589,14 @@
             }
 
             let myCardsHTML = '';
+            const drawnIdx = customData.drawnCardIndex;
+            const hasDrawnCard = drawnIdx !== null && drawnIdx !== undefined && drawnIdx !== false;
+
             myHand.forEach((card, idx) => {
                 let playable = false;
                 if (canMakeMove()) {
-                    if (customData.drawnCardIndex !== null && customData.drawnCardIndex !== undefined) {
-                        playable = (idx === customData.drawnCardIndex);
+                    if (hasDrawnCard) {
+                        playable = (idx === drawnIdx);
                     } else {
                         playable = isCardPlayable(card, topCard, currentColor, customData.pendingDraw || 0, customData.pendingDrawType || "", myHand);
                     }
@@ -1600,7 +1612,6 @@
                 (opp1Hand.length === 1 && !opp1UnoProtected) ||
                 (opp2Hand.length === 1 && !opp2UnoProtected);
 
-            const hasDrawnCard = customData.drawnCardIndex !== null && customData.drawnCardIndex !== undefined;
             const pendingChallenge = customData.pendingChallenge;
             const showChallengeModal = pendingChallenge && pendingChallenge.challenger === myID;
 
