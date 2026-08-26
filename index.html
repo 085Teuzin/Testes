@@ -22,7 +22,7 @@
             --text-muted: #94a3b8;
             --color-teuzin: #ff6b4a;
             --color-niella: #3da5ff;
-            --color-sophya: #e056fd;
+            --color-Sasa: #e056fd;
             --correct: #00e676;
             --wrong: #ff1744;
             --border: rgba(255, 255, 255, 0.08);
@@ -71,7 +71,7 @@
         .logo-title {
             font-size: clamp(14px, 4vw, 18px);
             font-weight: 900;
-            background: linear-gradient(135deg, var(--color-teuzin), var(--color-niella), var(--color-sophya));
+            background: linear-gradient(135deg, var(--color-teuzin), var(--color-niella), var(--color-Sasa));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             letter-spacing: 0.5px;
@@ -130,7 +130,7 @@
 
         #box-p1 .stat-label { color: var(--color-teuzin); }
         #box-p2 .stat-label { color: var(--color-niella); }
-        #box-p3 .stat-label { color: var(--color-sophya); }
+        #box-p3 .stat-label { color: var(--color-Sasa); }
 
         #box-p1.active-turn {
             background: rgba(255, 107, 74, 0.1);
@@ -200,7 +200,7 @@
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0; height: 3px;
-            background: linear-gradient(90deg, var(--color-teuzin), var(--color-niella), var(--color-sophya));
+            background: linear-gradient(90deg, var(--color-teuzin), var(--color-niella), var(--color-Sasa));
             border-radius: 20px 20px 0 0;
         }
 
@@ -329,7 +329,7 @@
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0; height: 3px;
-            background: linear-gradient(90deg, var(--color-teuzin), var(--color-niella), var(--color-sophya));
+            background: linear-gradient(90deg, var(--color-teuzin), var(--color-niella), var(--color-Sasa));
         }
 
         .win-title { font-size: clamp(20px, 5.5vw, 24px); font-weight: 900; letter-spacing: 0.5px; }
@@ -350,7 +350,7 @@
         .win-player-name { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
         .win-p1-name { color: var(--color-teuzin); }
         .win-p2-name { color: var(--color-niella); }
-        .win-p3-name { color: var(--color-sophya); }
+        .win-p3-name { color: var(--color-Sasa); }
         .win-player-score { font-size: 20px; font-weight: 900; color: #fff; }
         .win-vs { font-size: 10px; font-weight: 900; color: var(--text-muted); opacity: 0.6; }
 
@@ -362,7 +362,7 @@
             font-size: 15px;
             font-weight: 800;
             color: #fff;
-            background: linear-gradient(135deg, var(--color-teuzin), var(--color-sophya));
+            background: linear-gradient(135deg, var(--color-teuzin), var(--color-Sasa));
             cursor: pointer;
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -817,7 +817,7 @@
             <span id="meta-p2" class="stat-meta">0 Pts</span>
         </div>
         <div id="box-p3" class="player-stat-box">
-            <span class="stat-label"><span id="dot-p3">🔴</span> Sophya</span>
+            <span class="stat-label"><span id="dot-p3">🔴</span> Sasa</span>
             <span id="meta-p3" class="stat-meta">0 Pts</span>
         </div>
     </div>
@@ -852,7 +852,7 @@
                         </div>
                         <div class="win-vs">VS</div>
                         <div class="win-score-box">
-                            <span class="win-player-name win-p3-name">Sophya</span>
+                            <span class="win-player-name win-p3-name">Sasa</span>
                             <span id="win-score-p3" class="win-player-score">0</span>
                         </div>
                     </div>
@@ -941,7 +941,7 @@
         const winScoreP3 = $("win-score-p3");
         const btnRestartWin = $("btn-restart-win");
 
-        const playerNames = { p1: "Teuzin", p2: "Niella", p3: "Sophya" };
+        const playerNames = { p1: "Teuzin", p2: "Niella", p3: "Sasa" };
 
         function initializeRoomIfEmpty() {
             runTransaction(roomRef, (currentData) => {
@@ -1073,7 +1073,7 @@
                 let missing = [];
                 if (!p1Online) missing.push("Teuzin");
                 if (!p2Online) missing.push("Niella");
-                if (!p3Online) missing.push("Sophya");
+                if (!p3Online) missing.push("Sasa");
                 statusText.textContent = `Aguardando: ${missing.join(", ")}...`;
                 hasPlayedGoSound = false;
             } else {
