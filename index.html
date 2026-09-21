@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>My Virtual Pet</title>
+  
+  <style>
+    :root {
+      --bg-primary: #a8e6cf;
+      --bg-secondary: #dbede6;
+      --card-bg: #ffffff;
+      --text-main: #2d3436;
+      --accent: #ff8b94;
+      --accent-hover: #ff707a;
+      --coin-color: #f1c40f;
+      --gem-color: #9b59b6;
+      --danger: #e74c3c;
+      --success: #2ecc71;
+      --shadow: 0 8px 24px rgba(0,0,0,0.12);
+      --radius: 16px;
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #1e272e;
+      --bg-secondary: #2d3436;
+      --card-bg: #353b48;
+      --text-main: #f5f6fa;
+      --accent: #ff6b6b;
+      --accent-hover: #ee5253;
+      --shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    [data-theme="cozy"] {
+      --bg-primary: #fbe9e7;
+      --bg-secondary: #ffccbc;
+      --card-bg: #fff3e0;
+      --text-main: #4e342e;
+      --accent: #ff8a65;
+      --accent-hover: #ff7043;
+      --shadow: 0 8px 24px rgba(78,52,46,0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      transition: background-color 0.3s ease;
+    }
+
+    #app {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Screen Management */
+    .screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      flex-direction: column;
+      z-index: 10;
+      background-color: var(--bg-primary);
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    /* Loading Screen */
+    #screen-loading {
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      gap: 20px;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid var(--bg-secondary);
+      border-top: 5px solid var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Login Screen */
+    #screen-login {
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .login-card {
+      background: var(--card-bg);
+      padding: 40px 30px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      max-width: 400px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 25px;
+      background-color: var(--accent);
+      color: white;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.1s, background-color 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .btn:hover {
+      background-color: var(--accent-hover);
+      transform: translateY(-2px);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn-secondary {
+      background-color: var(--bg-secondary);
+      color: var(--text-main);
+    }
+
+    /* Creation Screen */
+    #screen-creation {
+      padding: 20px;
+      overflow-y: auto;
+      align-items: center;
+    }
+
+    .creation-container {
+      max-width: 500px;
+      width: 100%;
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .form-group label {
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+
+    .form-group input, .form-group select {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--bg-secondary);
+      background: var(--card-bg);
+      color: var(--text-main);
+      font-size: 1rem;
+    }
+
+    /* Main UI Header */
+    header {
+      padding: 10px 15px;
+      background: var(--card-bg);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 20;
+    }
+
+    .pet-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .pet-name-title {
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+
+    .level-badge {
+      font-size: 0.8rem;
+      background: var(--accent);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 10px;
+      display: inline-block;
+      width: fit-content;
+    }
+
+    .currencies {
+      display: flex;
+      gap: 15px;
+      font-weight: bold;
+    }
+
+    .currency-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Main Game Area */
+    .game-viewport {
+      flex: 1;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(0,0,0,0.05) 100%);
+    }
+
+    /* Pet Rendering & Animations */
+    .pet-stage {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .pet-avatar {
+      width: 180px;
+      height: 180px;
+      position: relative;
+      transition: transform 0.2s ease;
+    }
+
+    .pet-part {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    /* SVG Procedural Pet Render */
+    .pet-svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 10px 15px rgba(0,0,0,0.15));
+    }
+
+    .anim-idle {
+      animation: idleBounce 3s ease-in-out infinite;
+    }
+
+    .anim-sleep {
+      animation: sleepZzz 4s ease-in-out infinite;
+      opacity: 0.8;
+    }
+
+    .anim-happy {
+      animation: happyJump 0.5s ease-in-out infinite alternate;
+    }
+
+    .anim-wash {
+      animation: washShake 0.3s ease-in-out infinite;
+    }
+
+    @keyframes idleBounce {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-8px) scale(1.02, 0.98); }
+    }
+
+    @keyframes sleepZzz {
+      0%, 100% { transform: scale(0.98); }
+      50% { transform: scale(1.02); }
+    }
+
+    @keyframes happyJump {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-25px); }
+    }
+
+    @keyframes washShake {
+      0% { transform: rotate(-3deg); }
+      100% { transform: rotate(3deg); }
+    }
+
+    /* Speech Bubble */
+    .speech-bubble {
+      position: absolute;
+      top: -40px;
+      background: var(--card-bg);
+      padding: 8px 16px;
+      border-radius: 18px;
+      font-weight: bold;
+      font-size: 0.9rem;
+      box-shadow: var(--shadow);
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s ease;
+      white-space: nowrap;
+      z-index: 30;
+    }
+
+    .speech-bubble.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Status Bars Overlay */
+    .status-container {
+      width: 100%;
+      padding: 10px 15px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      background: var(--card-bg);
+    }
+
+    .status-bar-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .status-label {
+      font-size: 0.75rem;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .status-track {
+      width: 100%;
+      height: 8px;
+      background: var(--bg-secondary);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .status-fill {
+      height: 100%;
+      width: 100%;
+      background: var(--accent);
+      transition: width 0.4s ease, background-color 0.4s ease;
+    }
+
+    /* Navigation / Action Bar */
+    .action-bar {
+      display: flex;
+      justify-content: space-around;
+      padding: 10px;
+      background: var(--card-bg);
+      border-top: 1px solid var(--bg-secondary);
+    }
+
+    .action-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      color: var(--text-main);
+      font-size: 0.75rem;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 12px;
+      transition: background 0.2s;
+    }
+
+    .action-btn:hover {
+      background: var(--bg-secondary);
+    }
+
+    .action-icon {
+      font-size: 1.5rem;
+    }
+
+    /* Modals System */
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: flex-end;
+      z-index: 50;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    .modal-card {
+      background: var(--card-bg);
+      width: 100%;
+      max-width: 600px;
+      max-height: 85%;
+      border-radius: var(--radius) var(--radius) 0 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      box-shadow: var(--shadow);
+      transform: translateY(100%);
+      transition: transform 0.3s ease-out;
+      overflow: hidden;
+    }
+
+    .modal-overlay.active .modal-card {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--bg-secondary);
+      padding-bottom: 10px;
+    }
+
+    .modal-title {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text-main);
+    }
+
+    .modal-body {
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Grid layout for items / shop / house */
+    .grid-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 10px;
+    }
+
+    .item-card {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .item-card:hover {
+      transform: scale(1.02);
+    }
+
+    .item-icon {
+      font-size: 2rem;
+    }
+
+    .item-name {
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
+
+    .item-price {
+      font-size: 0.75rem;
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .item-badge {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: var(--accent);
+      color: white;
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    /* Sync Indicator */
+    #sync-indicator {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 12px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      pointer-events: none;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    #sync-indicator.active {
+      opacity: 1;
+    }
+
+    /* Minigame Overlay Canvas */
+    #minigame-canvas {
+      width: 100%;
+      height: 100%;
+      background: var(--bg-secondary);
+      display: block;
+    }
+
+    /* Responsiveness adjustments */
+    @media (min-width: 600px) {
+      .modal-overlay {
+        align-items: center;
+      }
+      .modal-card {
+        border-radius: var(--radius);
+        max-height: 80%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="sync-indicator">Salvando...</div>
+
+  <div id="app">
+    <!-- SCREEN: LOADING -->
+    <div id="screen-loading" class="screen active">
+      <div class="spinner"></div>
+      <p id="loading-text" style="font-weight: bold;">Carregando o Universo do Pet...</p>
+    </div>
+
+    <!-- SCREEN: LOGIN -->
+    <div id="screen-login" class="screen">
+      <div class="login-card">
+        <h1 style="color: var(--accent);">My Virtual Pet</h1>
+        <p>Seu novo melhor amigo virtual está te esperando na nuvem!</p>
+        <button id="btn-google-login" class="btn">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12.24 10.285V13.4h6.887c-.58 2.307-2.73 4.028-5.222 4.028a6.38 6.38 0 0 1-6.38-6.38a6.38 6.38 0 0 1 6.38-6.38c1.39 0 2.657.52 3.62 1.383l2.36-2.36A9.95 9.95 0 0 0 12.24 2C6.58 2 2 6.58 2 12.24s4.58 10.24 10.24 10.24c6.12 0 10.15-4.3 10.15-10.33c0-.7-.07-1.38-.18-2.015H12.24z"/></svg>
+          Entrar com Google
+        </button>
+      </div>
+    </div>
+
+    <!-- SCREEN: PET CREATION -->
+    <div id="screen-creation" class="screen">
+      <div class="creation-container">
+        <h2>Crie Seu Pet</h2>
+        <div class="form-group">
+          <label>Nome do Pet</label>
+          <input type="text" id="create-name" placeholder="Ex: Bob" maxlength="12">
+        </div>
+        <div class="form-group">
+          <label>Espécie</label>
+          <select id="create-species">
+            <option value="cachorro">Cachorro 🐶</option>
+            <option value="gato">Gato 🐱</option>
+            <option value="coelho">Coelho 🐰</option>
+            <option value="hamster">Hamster 🐹</option>
+            <option value="raposa">Raposa 🦊</option>
+            <option value="panda">Panda 🐼</option>
+            <option value="sapo">Sapo 🐸</option>
+            <option value="dragao">Dragão 🐲</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Cor Principal</label>
+          <input type="color" id="create-color" value="#ff8b94">
+        </div>
+        <div class="form-group">
+          <label>Personalidade</label>
+          <select id="create-personality">
+            <option value="alegre">Alegre (+Diversão)</option>
+            <option value="preguicoso">Preguiçoso (+Sono)</option>
+            <option value="carinhoso">Carinhoso (+Afeto)</option>
+            <option value="curioso">Curioso (+XP)</option>
+            <option value="bagunceiro">Bagunceiro (-Higiene)</option>
+            <option value="confiante">Confiante (+Moedas)</option>
+          </select>
+        </div>
+        <button id="btn-finish-creation" class="btn" style="margin-top: 10px;">Adotar Pet ❤️</button>
+      </div>
+    </div>
+
+    <!-- SCREEN: MAIN GAME -->
+    <div id="screen-game" class="screen">
+      <header>
+        <div class="pet-info">
+          <span class="pet-name-title" id="ui-pet-name">Pet</span>
+          <span class="level-badge" id="ui-pet-level">Nível 1</span>
+        </div>
+        <div class="currencies">
+          <div class="currency-item">🪙 <span id="ui-coins">0</span></div>
+          <div class="currency-item">💎 <span id="ui-gems">0</span></div>
+        </div>
+      </header>
+
+      <!-- Status Bars -->
+      <div class="status-container">
+        <div class="status-bar-wrap">
+          <div class="status-label"><span>🍖 Fome</span><span id="txt-hunger">100%</span></div>
+          <div class="status-track"><div id="bar-hunger" class="status-fill"></div></div>
+        </div>
+        <div class="status-bar-wrap">
+          <div class="status-label"><span>💧 Sede</span><span id="txt-thirst">100%</span></div>
+          <div class="status-track"><div id="bar-thirst" class="status-fill"></div></div>
+        </div>
+        <div class="status-bar-wrap">
+          <div class="status-label"><span>🧼 Higiene</span><span id="txt-hygiene">100%</span></div>
+          <div class="status-track"><div id="bar-hygiene" class="status-fill"></div></div>
+        </div>
+        <div class="status-bar-wrap">
+          <div class="status-label"><span>⚡ Energia</span><span id="txt-energy">100%</span></div>
+          <div class="status-track"><div id="bar-energy" class="status-fill"></div></div>
+        </div>
+        <div class="status-bar-wrap">
+          <div class="status-label"><span>❤️ Felicidade</span><span id="txt-happiness">100%</span></div>
+          <div class="status-track"><div id="bar-happiness" class="status-fill"></div></div>
+        </div>
+        <div class="status-bar-wrap">
+          <div class="status-label"><span>💊 Saúde</span><span id="txt-health">100%</span></div>
+          <div class="status-track"><div id="bar-health" class="status-fill"></div></div>
+        </div>
+      </div>
+
+      <!-- Main Interactive Viewport -->
+      <div class="game-viewport" id="viewport">
+        <div class="speech-bubble" id="speech-bubble">Olá Teuzin!</div>
+        
+        <div class="pet-stage" id="pet-stage">
+          <div class="pet-avatar anim-idle" id="pet-avatar">
+            <!-- Dynamic SVG Pet rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Bar -->
+      <div class="action-bar">
+        <button class="action-btn" onclick="UI.openModal('modal-feed')">
+          <span class="action-icon">🍎</span>Alimentar
+        </button>
+        <button class="action-btn" onclick="Game.actions.wash()">
+          <span class="action-icon">🧼</span>Banho
+        </button>
+        <button class="action-btn" onclick="Game.actions.sleep()">
+          <span class="action-icon">🌙</span>Dormir
+        </button>
+        <button class="action-btn" onclick="UI.openModal('modal-shop')">
+          <span class="action-icon">🛍️</span>Loja
+        </button>
+        <button class="action-btn" onclick="UI.openModal('modal-minigames')">
+          <span class="action-icon">🎮</span>Jogos
+        </button>
+        <button class="action-btn" onclick="UI.openModal('modal-more')">
+          <span class="action-icon">⚙️</span>Mais
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALS -->
+  <!-- Feed Modal -->
+  <div class="modal-overlay" id="modal-feed">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-title">Alimentar & Dessedentar</span>
+        <button class="modal-close" onclick="UI.closeModals()">✕</button>
+      </div>
+      <div class="modal-body">
+        <h3>Comidas e Bebidas</h3>
+        <div class="grid-list" id="list-inventory-food"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shop Modal -->
+  <div class="modal-overlay" id="modal-shop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-title">Loja Virtual</span>
+        <button class="modal-close" onclick="UI.closeModals()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="grid-list" id="list-shop"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Minigames Modal -->
+  <div class="modal-overlay" id="modal-minigames">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-title">Minijogos</span>
+        <button class="modal-close" onclick="UI.closeModals()">✕</button>
+      </div>
+      <div class="modal-body">
+        <button class="btn" onclick="Minigames.startMemory()">🧠 Jogo da Memória</button>
+        <button class="btn" style="margin-top:10px;" onclick="Minigames.startCatcher()">🍎 Pegar Comida</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Minigame Execution Modal -->
+  <div class="modal-overlay" id="modal-minigame-exec">
+    <div class="modal-card" style="height: 90%; max-height: 90%;">
+      <div class="modal-header">
+        <span class="modal-title" id="minigame-title">Minijogo</span>
+        <button class="modal-close" onclick="Minigames.stop()">✕</button>
+      </div>
+      <div class="modal-body" id="minigame-container" style="padding:0; overflow:hidden;">
+        <canvas id="minigame-canvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings & More Modal -->
+  <div class="modal-overlay" id="modal-more">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-title">Opções e Estatísticas</span>
+        <button class="modal-close" onclick="UI.closeModals()">✕</button>
+      </div>
+      <div class="modal-body">
+        <h3>Tema Visual</h3>
+        <select id="setting-theme" onchange="UI.setTheme(this.value)" style="padding:8px; border-radius:8px;">
+          <option value="default">Padrão Menta</option>
+          <option value="dark">Escuro</option>
+          <option value="cozy">Aconchegante</option>
+        </select>
+        <hr style="margin: 10px 0;">
+        <h3>Estatísticas</h3>
+        <p id="stats-summary" style="font-size:0.85rem; line-height:1.4;"></p>
+        <hr style="margin: 10px 0;">
+        <button class="btn btn-secondary" onclick="Sound.toggle()">🔊 Alternar Som</button>
+        <button class="btn btn-secondary" onclick="SaveManager.exportSave()" style="margin-top:5px;">💾 Exportar Save</button>
+        <button class="btn" style="background-color: var(--danger); margin-top:10px;" onclick="Auth.logout()">Sair da Conta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK Setup -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getDatabase, ref, get, set, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBqRAsWfP4w-r82PZOaJcDck7W8Aeph3p8",
+      authDomain: "teuzin-games.firebaseapp.com",
+      databaseURL: "https://teuzin-games-default-rtdb.firebaseio.com",
+      projectId: "teuzin-games",
+      storageBucket: "teuzin-games.firebasestorage.app",
+      messagingSenderId: "548192563345",
+      appId: "1:548192563345:web:e729e39f9f266aa6a68f30",
+      measurementId: "G-CB585E4B4Z"
+    };
+
+    // Initialize Firebase Services
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const provider = new GoogleAuthProvider();
+
+    // Sound System (Web Audio API)
+    window.Sound = {
+      ctx: null,
+      enabled: true,
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+      },
+      playTone(freq, type = 'sine', duration = 0.1) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch (e) {}
+      },
+      click() { this.playTone(400, 'sine', 0.05); },
+      success() { this.playTone(600, 'triangle', 0.15); },
+      buy() { this.playTone(800, 'square', 0.1); },
+      toggle() { this.enabled = !this.enabled; }
+    };
+
+    // Default Save Structure
+    const DEFAULT_SAVE = {
+      saveVersion: 1,
+      profile: { createdAt: Date.now(), lastLogin: Date.now() },
+      pet: {
+        name: "Pet",
+        species: "cachorro",
+        color: "#ff8b94",
+        personality: "alegre",
+        level: 1,
+        xp: 0
+      },
+      needs: {
+        hunger: 100,
+        thirst: 100,
+        hygiene: 100,
+        energy: 100,
+        happiness: 100,
+        health: 100,
+        lastUpdated: Date.now()
+      },
+      economy: { coins: 100, gems: 10 },
+      inventory: {
+        food_apple: 3,
+        food_water: 5
+      },
+      statistics: {
+        mealsGiven: 0,
+        bathsGiven: 0,
+        minigamesPlayed: 0
+      },
+      settings: { theme: 'default' }
+    };
+
+    // Items Catalog
+    window.ITEMS = {
+      food_apple: { id: 'food_apple', name: 'Maçã', type: 'food', icon: '🍎', price: 10, fillHunger: 20 },
+      food_burger: { id: 'food_burger', name: 'Hambúrguer', type: 'food', icon: '🍔', price: 30, fillHunger: 50 },
+      food_water: { id: 'food_water', name: 'Água', type: 'drink', icon: '💧', price: 5, fillThirst: 30 },
+      food_juice: { id: 'food_juice', name: 'Suco', type: 'drink', icon: '🧃', price: 15, fillThirst: 50 }
+    };
+
+    // Global State
+    window.GameState = null;
+    window.CurrentUser = null;
+
+    // Save Manager
+    window.SaveManager = {
+      debounceTimer: null,
+      
+      showIndicator(msg, duration = 1500) {
+        const ind = document.getElementById('sync-indicator');
+        ind.innerText = msg;
+        ind.classList.add('active');
+        setTimeout(() => ind.classList.remove('active'), duration);
+      },
+
+      async loadGame(uid) {
+        try {
+          const userRef = ref(db, `virtualPet/users/${uid}`);
+          const snapshot = await get(userRef);
+          if (snapshot.exists()) {
+            let data = snapshot.val();
+            window.GameState = this.migrateSave(data);
+          } else {
+            window.GameState = JSON.parse(JSON.stringify(DEFAULT_SAVE));
+          }
+          this.calculateOfflineProgression();
+          return true;
+        } catch (e) {
+          console.error("Erro ao carregar dados:", e);
+          window.GameState = JSON.parse(JSON.stringify(DEFAULT_SAVE));
+          return false;
+        }
+      },
+
+      migrateSave(data) {
+        if (!data.saveVersion) data.saveVersion = 1;
+        // Futuras migrações entram aqui
+        return data;
+      },
+
+      calculateOfflineProgression() {
+        const now = Date.now();
+        const last = window.GameState.needs.lastUpdated || now;
+        const diffMinutes = Math.floor((now - last) / (1000 * 60));
+
+        if (diffMinutes > 0) {
+          // Decaimento proporcional suave por minuto offline
+          const needs = window.GameState.needs;
+          needs.hunger = Math.max(0, needs.hunger - diffMinutes * 0.1);
+          needs.thirst = Math.max(0, needs.thirst - diffMinutes * 0.15);
+          needs.hygiene = Math.max(0, needs.hygiene - diffMinutes * 0.05);
+          needs.energy = Math.max(0, needs.energy - diffMinutes * 0.08);
+          needs.happiness = Math.max(0, needs.happiness - diffMinutes * 0.1);
+          needs.lastUpdated = now;
+        }
+      },
+
+      saveGame(immediate = false) {
+        if (!window.CurrentUser || !window.GameState) return;
+
+        window.GameState.needs.lastUpdated = Date.now();
+        
+        const doSave = async () => {
+          this.showIndicator("Salvando...");
+          try {
+            const userRef = ref(db, `virtualPet/users/${window.CurrentUser.uid}`);
+            await set(userRef, window.GameState);
+            this.showIndicator("Salvo!");
+          } catch (e) {
+            console.error("Erro no salvamento:", e);
+            this.showIndicator("Erro ao Salvar");
+          }
+        };
+
+        if (immediate) {
+          clearTimeout(this.debounceTimer);
+          doSave();
+        } else {
+          clearTimeout(this.debounceTimer);
+          this.debounceTimer = setTimeout(doSave, 2000);
+        }
+      },
+
+      exportSave() {
+        const str = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.GameState));
+        const anchor = document.createElement('a');
+        anchor.setAttribute("href", str);
+        anchor.setAttribute("download", `pet_save_${Date.now()}.json`);
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+      }
+    };
+
+    // Auth Module
+    window.Auth = {
+      init() {
+        onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            window.CurrentUser = user;
+            UI.showLoading("Carregando Save...");
+            await SaveManager.loadGame(user.uid);
+            
+            if (!window.GameState.pet.created) {
+              UI.showScreen('screen-creation');
+            } else {
+              Game.start();
+            }
+          } else {
+            window.CurrentUser = null;
+            UI.showScreen('screen-login');
+          }
+        });
+
+        document.getElementById('btn-google-login').onclick = () => {
+          signInWithPopup(auth, provider).catch(err => alert("Erro ao autenticar: " + err.message));
+        };
+      },
+      logout() {
+        signOut(auth).then(() => {
+          window.location.reload();
+        });
+      }
+    };
+
+    // UI Engine
+    window.UI = {
+      showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+      },
+      showLoading(msg) {
+        document.getElementById('loading-text').innerText = msg;
+        this.showScreen('screen-loading');
+      },
+      openModal(modalId) {
+        Sound.click();
+        this.updateModalsContent();
+        document.getElementById(modalId).classList.add('active');
+      },
+      closeModals() {
+        document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+      },
+      setTheme(theme) {
+        document.body.setAttribute('data-theme', theme);
+        if (window.GameState) {
+          window.GameState.settings.theme = theme;
+          SaveManager.saveGame();
+        }
+      },
+      speak(text) {
+        const bubble = document.getElementById('speech-bubble');
+        bubble.innerText = text;
+        bubble.classList.add('active');
+        setTimeout(() => bubble.classList.remove('active'), 2500);
+      },
+      updateModalsContent() {
+        if (!window.GameState) return;
+
+        // Populate Inventory / Food
+        const invContainer = document.getElementById('list-inventory-food');
+        invContainer.innerHTML = '';
+        Object.keys(window.GameState.inventory).forEach(itemId => {
+          const count = window.GameState.inventory[itemId];
+          const item = window.ITEMS[itemId];
+          if (count > 0 && item) {
+            const card = document.createElement('div');
+            card.className = 'item-card';
+            card.innerHTML = `
+              <span class="item-badge">x${count}</span>
+              <div class="item-icon">${item.icon}</div>
+              <div class="item-name">${item.name}</div>
+            `;
+            card.onclick = () => {
+              Game.actions.useItem(itemId);
+              UI.closeModals();
+            };
+            invContainer.appendChild(card);
+          }
+        });
+
+        // Populate Shop
+        const shopContainer = document.getElementById('list-shop');
+        shopContainer.innerHTML = '';
+        Object.keys(window.ITEMS).forEach(itemId => {
+          const item = window.ITEMS[itemId];
+          const card = document.createElement('div');
+          card.className = 'item-card';
+          card.innerHTML = `
+            <div class="item-icon">${item.icon}</div>
+            <div class="item-name">${item.name}</div>
+            <div class="item-price">🪙 ${item.price}</div>
+          `;
+          card.onclick = () => Game.actions.buyItem(itemId);
+          shopContainer.appendChild(card);
+        });
+
+        // Update Stats
+        const stats = window.GameState.statistics;
+        document.getElementById('stats-summary').innerHTML = `
+          Refeições servidas: <b>${stats.mealsGiven || 0}</b><br>
+          Banhos tomados: <b>${stats.bathsGiven || 0}</b><br>
+          Minijogos jogados: <b>${stats.minigamesPlayed || 0}</b>
+        `;
+      },
+      renderBars() {
+        if (!window.GameState) return;
+        const needs = window.GameState.needs;
+
+        const updateBar = (id, val) => {
+          const bounded = Math.max(0, Math.min(100, Math.round(val)));
+          document.getElementById(`bar-${id}`).style.width = `${bounded}%`;
+          document.getElementById(`txt-${id}`).innerText = `${bounded}%`;
+        };
+
+        updateBar('hunger', needs.hunger);
+        updateBar('thirst', needs.thirst);
+        updateBar('hygiene', needs.hygiene);
+        updateBar('energy', needs.energy);
+        updateBar('happiness', needs.happiness);
+        updateBar('health', needs.health);
+
+        document.getElementById('ui-pet-name').innerText = window.GameState.pet.name;
+        document.getElementById('ui-pet-level').innerText = `Nível ${window.GameState.pet.level}`;
+        document.getElementById('ui-coins').innerText = window.GameState.economy.coins;
+        document.getElementById('ui-gems').innerText = window.GameState.economy.gems;
+      }
+    };
+
+    // Dynamic Pet SVG Renderer
+    window.PetRenderer = {
+      render(species, color) {
+        return `
+          <svg class="pet-svg" viewBox="0 0 100 100">
+            <g>
+              <!-- Ears -->
+              <circle cx="30" cy="30" r="12" fill="${color}" />
+              <circle cx="70" cy="30" r="12" fill="${color}" />
+              
+              <!-- Body / Head -->
+              <circle cx="50" cy="55" r="32" fill="${color}" />
+              
+              <!-- Eyes -->
+              <circle cx="40" cy="50" r="4" fill="#2d3436" />
+              <circle cx="60" cy="50" r="4" fill="#2d3436" />
+              <circle cx="41" cy="48" r="1.5" fill="#ffffff" />
+              <circle cx="61" cy="48" r="1.5" fill="#ffffff" />
+              
+              <!-- Snout & Mouth -->
+              <ellipse cx="50" cy="58" rx="6" ry="4" fill="#ffffff" />
+              <polygon points="50,56 47,54 53,54" fill="#2d3436" />
+              <path d="M 47 60 Q 50 63 53 60" stroke="#2d3436" stroke-width="1.5" fill="none" />
+            </g>
+          </svg>
+        `;
+      }
+    };
+
+    // Game Core Logic
+    window.Game = {
+      loopInterval: null,
+
+      start() {
+        UI.showScreen('screen-game');
+        this.renderPet();
+        UI.setTheme(window.GameState.settings.theme || 'default');
+        
+        // Setup Stage Touch
+        document.getElementById('pet-stage').onclick = () => this.actions.petTouch();
+
+        // Main Loop (Decay + Render)
+        clearInterval(this.loopInterval);
+        this.loopInterval = setInterval(() => this.tick(), 3000);
+        
+        UI.renderBars();
+        UI.speak("Senti sua falta, Teuzin!");
+      },
+
+      renderPet() {
+        const pet = window.GameState.pet;
+        const container = document.getElementById('pet-avatar');
+        container.innerHTML = PetRenderer.render(pet.species, pet.color);
+      },
+
+      tick() {
+        if (!window.GameState) return;
+        const needs = window.GameState.needs;
+
+        // Passive decay
+        needs.hunger = Math.max(0, needs.hunger - 0.2);
+        needs.thirst = Math.max(0, needs.thirst - 0.3);
+        needs.hygiene = Math.max(0, needs.hygiene - 0.1);
+        needs.energy = Math.max(0, needs.energy - 0.15);
+        needs.happiness = Math.max(0, needs.happiness - 0.2);
+
+        // Health impact
+        if (needs.hunger < 20 || needs.hygiene < 20) {
+          needs.health = Math.max(0, needs.health - 0.5);
+        } else if (needs.health < 100) {
+          needs.health = Math.min(100, needs.health + 0.2);
+        }
+
+        UI.renderBars();
+        SaveManager.saveGame();
+      },
+
+      actions: {
+        petTouch() {
+          Sound.success();
+          window.GameState.needs.happiness = Math.min(100, window.GameState.needs.happiness + 5);
+          UI.renderBars();
+          
+          const avatar = document.getElementById('pet-avatar');
+          avatar.classList.add('anim-happy');
+          setTimeout(() => avatar.classList.remove('anim-happy'), 1000);
+
+          const msgs = ["Hehe! ❤️", "Que carinho bom!", "Adoro você!"];
+          UI.speak(msgs[Math.floor(Math.random() * msgs.length)]);
+          SaveManager.saveGame();
+        },
+
+        useItem(itemId) {
+          const item = window.ITEMS[itemId];
+          const inv = window.GameState.inventory;
+          if (inv[itemId] && inv[itemId] > 0) {
+            inv[itemId]--;
+            
+            if (item.fillHunger) window.GameState.needs.hunger = Math.min(100, window.GameState.needs.hunger + item.fillHunger);
+            if (item.fillThirst) window.GameState.needs.thirst = Math.min(100, window.GameState.needs.thirst + item.fillThirst);
+            
+            window.GameState.statistics.mealsGiven = (window.GameState.statistics.mealsGiven || 0) + 1;
+            
+            Sound.success();
+            UI.speak("Nham nham! Delícia!");
+            UI.renderBars();
+            SaveManager.saveGame(true);
+          }
+        },
+
+        buyItem(itemId) {
+          const item = window.ITEMS[itemId];
+          if (window.GameState.economy.coins >= item.price) {
+            window.GameState.economy.coins -= item.price;
+            window.GameState.inventory[itemId] = (window.GameState.inventory[itemId] || 0) + 1;
+            
+            Sound.buy();
+            UI.renderBars();
+            UI.updateModalsContent();
+            SaveManager.saveGame(true);
+          } else {
+            UI.speak("Moedas insuficientes!");
+          }
+        },
+
+        wash() {
+          window.GameState.needs.hygiene = 100;
+          window.GameState.statistics.bathsGiven = (window.GameState.statistics.bathsGiven || 0) + 1;
+          
+          const avatar = document.getElementById('pet-avatar');
+          avatar.classList.add('anim-wash');
+          setTimeout(() => avatar.classList.remove('anim-wash'), 1500);
+
+          Sound.success();
+          UI.speak("Tô limpinho! 🧼");
+          UI.renderBars();
+          SaveManager.saveGame(true);
+        },
+
+        sleep() {
+          window.GameState.needs.energy = 100;
+          Sound.click();
+          UI.speak("Zzz... Boa noite! 🌙");
+          UI.renderBars();
+          SaveManager.saveGame(true);
+        }
+      }
+    };
+
+    // Creation Form Handler
+    document.getElementById('btn-finish-creation').onclick = () => {
+      const name = document.getElementById('create-name').value.trim() || "Pet";
+      const species = document.getElementById('create-species').value;
+      const color = document.getElementById('create-color').value;
+      const personality = document.getElementById('create-personality').value;
+
+      window.GameState.pet = {
+        name,
+        species,
+        color,
+        personality,
+        level: 1,
+        xp: 0,
+        created: true
+      };
+
+      SaveManager.saveGame(true);
+      Game.start();
+    };
+
+    // Minigames Manager
+    window.Minigames = {
+      active: false,
+      loopId: null,
+
+      startMemory() {
+        UI.closeModals();
+        UI.openModal('modal-minigame-exec');
+        document.getElementById('minigame-title').innerText = "Jogo da Memória";
+        
+        const container = document.getElementById('minigame-container');
+        container.innerHTML = `
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; padding:20px; width:100%;">
+            ${[1,1,2,2,3,3].sort(()=>Math.random()-0.5).map(v => `
+              <button class="btn btn-secondary" style="height:80px; font-size:1.5rem;" onclick="Minigames.clickCard(this, ${v})">❓</button>
+            `).join('')}
+          </div>
+        `;
+      },
+
+      cardState: [],
+      clickCard(btn, val) {
+        Sound.click();
+        btn.innerText = val === 1 ? '🍎' : val === 2 ? '⚽' : '⭐';
+        this.cardState.push({btn, val});
+        if (this.cardState.length === 2) {
+          if (this.cardState[0].val === this.cardState[1].val) {
+            Sound.success();
+            this.cardState = [];
+            window.GameState.economy.coins += 15;
+            UI.renderBars();
+            SaveManager.saveGame();
+          } else {
+            setTimeout(() => {
+              this.cardState.forEach(c => c.btn.innerText = '❓');
+              this.cardState = [];
+            }, 800);
+          }
+        }
+      },
+
+      startCatcher() {
+        UI.closeModals();
+        UI.openModal('modal-minigame-exec');
+        document.getElementById('minigame-title').innerText = "Pegar Comida";
+        
+        const canvas = document.getElementById('minigame-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+
+        let playerX = canvas.width / 2;
+        let score = 0;
+        let food = { x: Math.random() * (canvas.width - 20), y: 0, speed: 3 };
+
+        const touchHandler = (e) => {
+          const rect = canvas.getBoundingClientRect();
+          playerX = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+        };
+
+        canvas.ontouchstart = touchHandler;
+        canvas.ontouchmove = touchHandler;
+        canvas.onmousemove = touchHandler;
+
+        this.active = true;
+        const loop = () => {
+          if (!this.active) return;
+          ctx.clearRect(0,0, canvas.width, canvas.height);
+
+          // Food
+          food.y += food.speed;
+          ctx.font = "24px sans-serif";
+          ctx.fillText("🍎", food.x, food.y);
+
+          // Player
+          ctx.fillStyle = "#ff8b94";
+          ctx.fillRect(playerX - 25, canvas.height - 30, 50, 15);
+
+          // Catch Check
+          if (food.y >= canvas.height - 30 && Math.abs(food.x - playerX) < 35) {
+            Sound.success();
+            score += 5;
+            window.GameState.economy.coins += 5;
+            UI.renderBars();
+            food = { x: Math.random() * (canvas.width - 20), y: 0, speed: 3 + score * 0.1 };
+          } else if (food.y > canvas.height) {
+            food = { x: Math.random() * (canvas.width - 20), y: 0, speed: 3 + score * 0.1 };
+          }
+
+          ctx.fillStyle = "#2d3436";
+          ctx.font = "16px sans-serif";
+          ctx.fillText(`Moedas: ${score}`, 10, 25);
+
+          this.loopId = requestAnimationFrame(loop);
+        };
+        loop();
+      },
+
+      stop() {
+        this.active = false;
+        if (this.loopId) cancelAnimationFrame(this.loopId);
+        UI.closeModals();
+        SaveManager.saveGame(true);
+      }
+    };
+
+    // Initialize Application
+    window.addEventListener('load', () => {
+      Auth.init();
+    });
+  </script>
+</body>
+</html>
