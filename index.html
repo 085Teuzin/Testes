@@ -3,42 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>My Virtual Pet</title>
+  <title>My Virtual Pet - Deluxe Edition</title>
   
   <style>
     :root {
-      --bg-primary: #a8e6cf;
-      --bg-secondary: #dbede6;
+      --bg-primary: #81ecec;
+      --bg-secondary: #00cec9;
       --card-bg: #ffffff;
       --text-main: #2d3436;
-      --accent: #ff8b94;
-      --accent-hover: #ff707a;
+      --accent: #ff7675;
+      --accent-hover: #d63031;
       --coin-color: #f1c40f;
       --gem-color: #9b59b6;
       --danger: #e74c3c;
       --success: #2ecc71;
-      --shadow: 0 8px 24px rgba(0,0,0,0.12);
-      --radius: 16px;
+      --shadow: 0 10px 30px rgba(0,0,0,0.15);
+      --radius: 20px;
     }
 
     [data-theme="dark"] {
-      --bg-primary: #1e272e;
-      --bg-secondary: #2d3436;
-      --card-bg: #353b48;
-      --text-main: #f5f6fa;
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
       --accent: #ff6b6b;
       --accent-hover: #ee5253;
-      --shadow: 0 8px 24px rgba(0,0,0,0.4);
+      --shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
 
     [data-theme="cozy"] {
-      --bg-primary: #fbe9e7;
-      --bg-secondary: #ffccbc;
-      --card-bg: #fff3e0;
-      --text-main: #4e342e;
-      --accent: #ff8a65;
-      --accent-hover: #ff7043;
-      --shadow: 0 8px 24px rgba(78,52,46,0.15);
+      --bg-primary: #fce4ec;
+      --bg-secondary: #f8bbd0;
+      --card-bg: #fff5f8;
+      --text-main: #4a154b;
+      --accent: #e91e63;
+      --accent-hover: #c2185b;
+      --shadow: 0 10px 30px rgba(74,21,75,0.15);
+    }
+
+    [data-theme="cyberpunk"] {
+      --bg-primary: #050505;
+      --bg-secondary: #121212;
+      --card-bg: #181818;
+      --text-main: #00ffcc;
+      --accent: #ff007f;
+      --accent-hover: #ff0055;
+      --shadow: 0 0 20px rgba(0, 255, 204, 0.2);
     }
 
     * {
@@ -56,7 +66,7 @@
       overflow: hidden;
       background-color: var(--bg-primary);
       color: var(--text-main);
-      transition: background-color 0.3s ease;
+      transition: background-color 0.4s ease;
     }
 
     #app {
@@ -67,7 +77,6 @@
       position: relative;
     }
 
-    /* Screen Management */
     .screen {
       position: absolute;
       top: 0;
@@ -84,7 +93,6 @@
       display: flex;
     }
 
-    /* Loading Screen */
     #screen-loading {
       justify-content: center;
       align-items: center;
@@ -93,10 +101,10 @@
     }
 
     .spinner {
-      width: 50px;
-      height: 50px;
-      border: 5px solid var(--bg-secondary);
-      border-top: 5px solid var(--accent);
+      width: 60px;
+      height: 60px;
+      border: 6px solid rgba(255,255,255,0.3);
+      border-top: 6px solid var(--accent);
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
@@ -106,12 +114,12 @@
       100% { transform: rotate(360deg); }
     }
 
-    /* Login Screen */
     #screen-login {
       justify-content: center;
       align-items: center;
       padding: 20px;
       text-align: center;
+      background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
     }
 
     .login-card {
@@ -119,7 +127,7 @@
       padding: 40px 30px;
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      max-width: 400px;
+      max-width: 420px;
       width: 100%;
       display: flex;
       flex-direction: column;
@@ -128,25 +136,26 @@
     }
 
     .btn {
-      padding: 12px 24px;
+      padding: 14px 28px;
       border: none;
-      border-radius: 25px;
+      border-radius: 30px;
       background-color: var(--accent);
       color: white;
       font-weight: bold;
       font-size: 1rem;
       cursor: pointer;
-      transition: transform 0.1s, background-color 0.2s;
+      transition: all 0.2s ease;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
     }
 
     .btn:hover {
       background-color: var(--accent-hover);
       transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
     }
 
     .btn:active {
@@ -158,29 +167,29 @@
       color: var(--text-main);
     }
 
-    /* Creation Screen */
     #screen-creation {
       padding: 20px;
       overflow-y: auto;
       align-items: center;
+      justify-content: center;
     }
 
     .creation-container {
       max-width: 500px;
       width: 100%;
       background: var(--card-bg);
-      padding: 20px;
+      padding: 30px;
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      gap: 18px;
     }
 
     .form-group {
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 6px;
     }
 
     .form-group label {
@@ -189,19 +198,24 @@
     }
 
     .form-group input, .form-group select {
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid var(--bg-secondary);
+      padding: 12px;
+      border-radius: 12px;
+      border: 2px solid rgba(0,0,0,0.08);
       background: var(--card-bg);
       color: var(--text-main);
       font-size: 1rem;
+      outline: none;
+      transition: border 0.2s;
     }
 
-    /* Main UI Header */
+    .form-group input:focus, .form-group select:focus {
+      border-color: var(--accent);
+    }
+
     header {
-      padding: 10px 15px;
+      padding: 12px 20px;
       background: var(--card-bg);
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -211,20 +225,21 @@
     .pet-info {
       display: flex;
       flex-direction: column;
+      gap: 4px;
     }
 
     .pet-name-title {
-      font-weight: bold;
-      font-size: 1.1rem;
+      font-weight: 800;
+      font-size: 1.2rem;
     }
 
     .level-badge {
       font-size: 0.8rem;
       background: var(--accent);
       color: white;
-      padding: 2px 8px;
-      border-radius: 10px;
-      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-weight: bold;
       width: fit-content;
     }
 
@@ -232,15 +247,18 @@
       display: flex;
       gap: 15px;
       font-weight: bold;
+      font-size: 1.1rem;
     }
 
     .currency-item {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
+      background: rgba(0,0,0,0.05);
+      padding: 6px 12px;
+      border-radius: 20px;
     }
 
-    /* Main Game Area */
     .game-viewport {
       flex: 1;
       position: relative;
@@ -249,14 +267,13 @@
       justify-content: center;
       align-items: center;
       overflow: hidden;
-      background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(0,0,0,0.05) 100%);
+      background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0.08) 100%);
     }
 
-    /* Pet Rendering & Animations */
     .pet-stage {
       position: relative;
-      width: 220px;
-      height: 220px;
+      width: 260px;
+      height: 260px;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -264,28 +281,16 @@
     }
 
     .pet-avatar {
-      width: 180px;
-      height: 180px;
+      width: 220px;
+      height: 220px;
       position: relative;
       transition: transform 0.2s ease;
     }
 
-    .pet-part {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-size: contain;
-      background-repeat: no-repeat;
-      background-position: center;
-    }
-
-    /* SVG Procedural Pet Render */
     .pet-svg {
       width: 100%;
       height: 100%;
-      filter: drop-shadow(0 10px 15px rgba(0,0,0,0.15));
+      filter: drop-shadow(0 12px 20px rgba(0,0,0,0.2));
     }
 
     .anim-idle {
@@ -294,7 +299,7 @@
 
     .anim-sleep {
       animation: sleepZzz 4s ease-in-out infinite;
-      opacity: 0.8;
+      opacity: 0.85;
     }
 
     .anim-happy {
@@ -307,38 +312,37 @@
 
     @keyframes idleBounce {
       0%, 100% { transform: translateY(0) scale(1); }
-      50% { transform: translateY(-8px) scale(1.02, 0.98); }
+      50% { transform: translateY(-10px) scale(1.02, 0.98); }
     }
 
     @keyframes sleepZzz {
-      0%, 100% { transform: scale(0.98); }
-      50% { transform: scale(1.02); }
+      0%, 100% { transform: scale(0.96) rotate(-2deg); }
+      50% { transform: scale(1.02) rotate(2deg); }
     }
 
     @keyframes happyJump {
       0% { transform: translateY(0); }
-      100% { transform: translateY(-25px); }
+      100% { transform: translateY(-30px); }
     }
 
     @keyframes washShake {
-      0% { transform: rotate(-3deg); }
-      100% { transform: rotate(3deg); }
+      0% { transform: rotate(-5deg); }
+      100% { transform: rotate(5deg); }
     }
 
-    /* Speech Bubble */
     .speech-bubble {
       position: absolute;
-      top: -40px;
+      top: -50px;
       background: var(--card-bg);
-      padding: 8px 16px;
-      border-radius: 18px;
+      padding: 10px 20px;
+      border-radius: 20px;
       font-weight: bold;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       box-shadow: var(--shadow);
       pointer-events: none;
       opacity: 0;
       transform: translateY(10px);
-      transition: all 0.3s ease;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       white-space: nowrap;
       z-index: 30;
     }
@@ -348,24 +352,24 @@
       transform: translateY(0);
     }
 
-    /* Status Bars Overlay */
     .status-container {
       width: 100%;
-      padding: 10px 15px;
+      padding: 12px 20px;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
+      gap: 10px;
       background: var(--card-bg);
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.03);
     }
 
     .status-bar-wrap {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 4px;
     }
 
     .status-label {
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       font-weight: bold;
       display: flex;
       justify-content: space-between;
@@ -373,9 +377,9 @@
 
     .status-track {
       width: 100%;
-      height: 8px;
-      background: var(--bg-secondary);
-      border-radius: 4px;
+      height: 10px;
+      background: rgba(0,0,0,0.08);
+      border-radius: 5px;
       overflow: hidden;
     }
 
@@ -384,15 +388,15 @@
       width: 100%;
       background: var(--accent);
       transition: width 0.4s ease, background-color 0.4s ease;
+      border-radius: 5px;
     }
 
-    /* Navigation / Action Bar */
     .action-bar {
       display: flex;
       justify-content: space-around;
-      padding: 10px;
+      padding: 12px;
       background: var(--card-bg);
-      border-top: 1px solid var(--bg-secondary);
+      border-top: 1px solid rgba(0,0,0,0.05);
     }
 
     .action-btn {
@@ -403,36 +407,37 @@
       background: none;
       border: none;
       color: var(--text-main);
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       font-weight: bold;
       cursor: pointer;
-      padding: 6px;
-      border-radius: 12px;
-      transition: background 0.2s;
+      padding: 8px 12px;
+      border-radius: 16px;
+      transition: background 0.2s, transform 0.1s;
     }
 
     .action-btn:hover {
-      background: var(--bg-secondary);
+      background: rgba(0,0,0,0.05);
+      transform: translateY(-2px);
     }
 
     .action-icon {
-      font-size: 1.5rem;
+      font-size: 1.6rem;
     }
 
-    /* Modals System */
     .modal-overlay {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
       display: none;
       justify-content: center;
       align-items: flex-end;
       z-index: 50;
       opacity: 0;
-      transition: opacity 0.2s ease;
+      transition: opacity 0.25s ease;
     }
 
     .modal-overlay.active {
@@ -446,13 +451,13 @@
       max-width: 600px;
       max-height: 85%;
       border-radius: var(--radius) var(--radius) 0 0;
-      padding: 20px;
+      padding: 24px;
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      gap: 18px;
       box-shadow: var(--shadow);
       transform: translateY(100%);
-      transition: transform 0.3s ease-out;
+      transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
       overflow: hidden;
     }
 
@@ -464,21 +469,27 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid var(--bg-secondary);
-      padding-bottom: 10px;
+      border-bottom: 2px solid rgba(0,0,0,0.05);
+      padding-bottom: 12px;
     }
 
     .modal-title {
-      font-size: 1.2rem;
-      font-weight: bold;
+      font-size: 1.3rem;
+      font-weight: 800;
     }
 
     .modal-close {
-      background: none;
+      background: rgba(0,0,0,0.05);
       border: none;
-      font-size: 1.5rem;
+      font-size: 1.2rem;
       cursor: pointer;
       color: var(--text-main);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .modal-body {
@@ -486,88 +497,91 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 14px;
     }
 
-    /* Grid layout for items / shop / house */
     .grid-list {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 12px;
     }
 
     .item-card {
-      background: var(--bg-secondary);
-      border-radius: 12px;
-      padding: 10px;
+      background: rgba(0,0,0,0.03);
+      border: 2px solid rgba(0,0,0,0.05);
+      border-radius: 16px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       text-align: center;
       cursor: pointer;
       position: relative;
+      transition: transform 0.2s, border-color 0.2s;
     }
 
     .item-card:hover {
-      transform: scale(1.02);
+      transform: scale(1.04);
+      border-color: var(--accent);
     }
 
     .item-icon {
-      font-size: 2rem;
+      font-size: 2.2rem;
     }
 
     .item-name {
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       font-weight: bold;
     }
 
     .item-price {
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       color: var(--accent);
-      font-weight: bold;
+      font-weight: 800;
     }
 
     .item-badge {
       position: absolute;
-      top: 5px;
-      right: 5px;
+      top: 6px;
+      right: 6px;
       background: var(--accent);
       color: white;
-      font-size: 0.65rem;
-      padding: 2px 6px;
-      border-radius: 8px;
+      font-size: 0.7rem;
+      font-weight: bold;
+      padding: 2px 8px;
+      border-radius: 10px;
     }
 
-    /* Sync Indicator */
     #sync-indicator {
       position: absolute;
-      top: 10px;
-      right: 10px;
-      font-size: 0.75rem;
-      padding: 4px 10px;
-      border-radius: 12px;
-      background: rgba(0,0,0,0.6);
+      top: 15px;
+      right: 15px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: rgba(0,0,0,0.75);
       color: white;
       pointer-events: none;
       z-index: 100;
       opacity: 0;
       transition: opacity 0.3s ease;
+      backdrop-filter: blur(4px);
     }
 
     #sync-indicator.active {
       opacity: 1;
     }
 
-    /* Minigame Overlay Canvas */
     #minigame-canvas {
       width: 100%;
       height: 100%;
       background: var(--bg-secondary);
       display: block;
+      border-radius: 12px;
     }
 
-    /* Responsiveness adjustments */
     @media (min-width: 600px) {
       .modal-overlay {
         align-items: center;
@@ -581,31 +595,28 @@
 </head>
 <body>
 
-  <div id="sync-indicator">Salvando...</div>
+  <div id="sync-indicator">Sincronizando...</div>
 
   <div id="app">
-    <!-- SCREEN: LOADING -->
     <div id="screen-loading" class="screen active">
       <div class="spinner"></div>
-      <p id="loading-text" style="font-weight: bold;">Carregando o Universo do Pet...</p>
+      <p id="loading-text" style="font-weight: bold; font-size: 1.1rem;">Iniciando Deluxe Engine...</p>
     </div>
 
-    <!-- SCREEN: LOGIN -->
     <div id="screen-login" class="screen">
       <div class="login-card">
-        <h1 style="color: var(--accent);">My Virtual Pet</h1>
-        <p>Seu novo melhor amigo virtual está te esperando na nuvem!</p>
+        <h1 style="color: var(--accent); font-size: 2rem;">My Virtual Pet</h1>
+        <p style="opacity: 0.8; font-size: 0.95rem;">Deluxe Realtime Edition</p>
         <button id="btn-google-login" class="btn">
-          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12.24 10.285V13.4h6.887c-.58 2.307-2.73 4.028-5.222 4.028a6.38 6.38 0 0 1-6.38-6.38a6.38 6.38 0 0 1 6.38-6.38c1.39 0 2.657.52 3.62 1.383l2.36-2.36A9.95 9.95 0 0 0 12.24 2C6.58 2 2 6.58 2 12.24s4.58 10.24 10.24 10.24c6.12 0 10.15-4.3 10.15-10.33c0-.7-.07-1.38-.18-2.015H12.24z"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M12.24 10.285V13.4h6.887c-.58 2.307-2.73 4.028-5.222 4.028a6.38 6.38 0 0 1-6.38-6.38a6.38 6.38 0 0 1 6.38-6.38c1.39 0 2.657.52 3.62 1.383l2.36-2.36A9.95 9.95 0 0 0 12.24 2C6.58 2 2 6.58 2 12.24s4.58 10.24 10.24 10.24c6.12 0 10.15-4.3 10.15-10.33c0-.7-.07-1.38-.18-2.015H12.24z"/></svg>
           Entrar com Google
         </button>
       </div>
     </div>
 
-    <!-- SCREEN: PET CREATION -->
     <div id="screen-creation" class="screen">
       <div class="creation-container">
-        <h2>Crie Seu Pet</h2>
+        <h2 style="text-align: center; color: var(--accent);">Adote Seu Pet Deluxe</h2>
         <div class="form-group">
           <label>Nome do Pet</label>
           <input type="text" id="create-name" placeholder="Ex: Bob" maxlength="12">
@@ -625,24 +636,22 @@
         </div>
         <div class="form-group">
           <label>Cor Principal</label>
-          <input type="color" id="create-color" value="#ff8b94">
+          <input type="color" id="create-color" value="#ff7675">
         </div>
         <div class="form-group">
           <label>Personalidade</label>
           <select id="create-personality">
-            <option value="alegre">Alegre (+Diversão)</option>
-            <option value="preguicoso">Preguiçoso (+Sono)</option>
+            <option value="alegre">Alegre (+Felicidade)</option>
+            <option value="preguicoso">Preguiçoso (+Energia)</option>
             <option value="carinhoso">Carinhoso (+Afeto)</option>
-            <option value="curioso">Curioso (+XP)</option>
-            <option value="bagunceiro">Bagunceiro (-Higiene)</option>
-            <option value="confiante">Confiante (+Moedas)</option>
+            <option value="curioso">Curioso (+XP extra)</option>
+            <option value="glutao">Glutão (+Fome)</option>
           </select>
         </div>
-        <button id="btn-finish-creation" class="btn" style="margin-top: 10px;">Adotar Pet ❤️</button>
+        <button id="btn-finish-creation" class="btn" style="margin-top: 10px;">Adotar Agora ❤️</button>
       </div>
     </div>
 
-    <!-- SCREEN: MAIN GAME -->
     <div id="screen-game" class="screen">
       <header>
         <div class="pet-info">
@@ -655,7 +664,6 @@
         </div>
       </header>
 
-      <!-- Status Bars -->
       <div class="status-container">
         <div class="status-bar-wrap">
           <div class="status-label"><span>🍖 Fome</span><span id="txt-hunger">100%</span></div>
@@ -683,18 +691,14 @@
         </div>
       </div>
 
-      <!-- Main Interactive Viewport -->
       <div class="game-viewport" id="viewport">
         <div class="speech-bubble" id="speech-bubble">Olá Teuzin!</div>
         
         <div class="pet-stage" id="pet-stage">
-          <div class="pet-avatar anim-idle" id="pet-avatar">
-            <!-- Dynamic SVG Pet rendered by JS -->
-          </div>
+          <div class="pet-avatar anim-idle" id="pet-avatar"></div>
         </div>
       </div>
 
-      <!-- Navigation Bar -->
       <div class="action-bar">
         <button class="action-btn" onclick="UI.openModal('modal-feed')">
           <span class="action-icon">🍎</span>Alimentar
@@ -718,8 +722,6 @@
     </div>
   </div>
 
-  <!-- MODALS -->
-  <!-- Feed Modal -->
   <div class="modal-overlay" id="modal-feed">
     <div class="modal-card">
       <div class="modal-header">
@@ -727,17 +729,15 @@
         <button class="modal-close" onclick="UI.closeModals()">✕</button>
       </div>
       <div class="modal-body">
-        <h3>Comidas e Bebidas</h3>
         <div class="grid-list" id="list-inventory-food"></div>
       </div>
     </div>
   </div>
 
-  <!-- Shop Modal -->
   <div class="modal-overlay" id="modal-shop">
     <div class="modal-card">
       <div class="modal-header">
-        <span class="modal-title">Loja Virtual</span>
+        <span class="modal-title">Loja Virtual Deluxe</span>
         <button class="modal-close" onclick="UI.closeModals()">✕</button>
       </div>
       <div class="modal-body">
@@ -746,7 +746,6 @@
     </div>
   </div>
 
-  <!-- Minigames Modal -->
   <div class="modal-overlay" id="modal-minigames">
     <div class="modal-card">
       <div class="modal-header">
@@ -760,7 +759,6 @@
     </div>
   </div>
 
-  <!-- Minigame Execution Modal -->
   <div class="modal-overlay" id="modal-minigame-exec">
     <div class="modal-card" style="height: 90%; max-height: 90%;">
       <div class="modal-header">
@@ -773,7 +771,6 @@
     </div>
   </div>
 
-  <!-- Settings & More Modal -->
   <div class="modal-overlay" id="modal-more">
     <div class="modal-card">
       <div class="modal-header">
@@ -782,27 +779,27 @@
       </div>
       <div class="modal-body">
         <h3>Tema Visual</h3>
-        <select id="setting-theme" onchange="UI.setTheme(this.value)" style="padding:8px; border-radius:8px;">
+        <select id="setting-theme" onchange="UI.setTheme(this.value)" style="padding:10px; border-radius:10px; width:100%;">
           <option value="default">Padrão Menta</option>
-          <option value="dark">Escuro</option>
+          <option value="dark">Escuro Deluxe</option>
           <option value="cozy">Aconchegante</option>
+          <option value="cyberpunk">Cyberpunk</option>
         </select>
-        <hr style="margin: 10px 0;">
+        <hr style="margin: 10px 0; border: none; border-top: 1px solid rgba(0,0,0,0.1);">
         <h3>Estatísticas</h3>
-        <p id="stats-summary" style="font-size:0.85rem; line-height:1.4;"></p>
-        <hr style="margin: 10px 0;">
-        <button class="btn btn-secondary" onclick="Sound.toggle()">🔊 Alternar Som</button>
-        <button class="btn btn-secondary" onclick="SaveManager.exportSave()" style="margin-top:5px;">💾 Exportar Save</button>
-        <button class="btn" style="background-color: var(--danger); margin-top:10px;" onclick="Auth.logout()">Sair da Conta</button>
+        <p id="stats-summary" style="font-size:0.9rem; line-height:1.6;"></p>
+        <hr style="margin: 10px 0; border: none; border-top: 1px solid rgba(0,0,0,0.1);">
+        <button class="btn btn-secondary" onclick="Sound.toggle()" style="width:100%;">🔊 Alternar Som</button>
+        <button class="btn btn-secondary" onclick="SaveManager.exportSave()" style="margin-top:8px; width:100%;">💾 Exportar Save</button>
+        <button class="btn" style="background-color: var(--danger); margin-top:12px; width:100%;" onclick="Auth.logout()">Sair da Conta</button>
       </div>
     </div>
   </div>
 
-  <!-- Firebase SDK Setup -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getDatabase, ref, get, set, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBqRAsWfP4w-r82PZOaJcDck7W8Aeph3p8",
@@ -815,13 +812,11 @@
       measurementId: "G-CB585E4B4Z"
     };
 
-    // Initialize Firebase Services
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
     const provider = new GoogleAuthProvider();
 
-    // Sound System (Web Audio API)
     window.Sound = {
       ctx: null,
       enabled: true,
@@ -848,23 +843,23 @@
           osc.stop(this.ctx.currentTime + duration);
         } catch (e) {}
       },
-      click() { this.playTone(400, 'sine', 0.05); },
-      success() { this.playTone(600, 'triangle', 0.15); },
-      buy() { this.playTone(800, 'square', 0.1); },
+      click() { this.playTone(450, 'sine', 0.05); },
+      success() { this.playTone(650, 'triangle', 0.15); },
+      buy() { this.playTone(850, 'square', 0.1); },
       toggle() { this.enabled = !this.enabled; }
     };
 
-    // Default Save Structure
     const DEFAULT_SAVE = {
-      saveVersion: 1,
+      saveVersion: 2,
       profile: { createdAt: Date.now(), lastLogin: Date.now() },
       pet: {
         name: "Pet",
         species: "cachorro",
-        color: "#ff8b94",
+        color: "#ff7675",
         personality: "alegre",
         level: 1,
-        xp: 0
+        xp: 0,
+        created: false
       },
       needs: {
         hunger: 100,
@@ -875,10 +870,12 @@
         health: 100,
         lastUpdated: Date.now()
       },
-      economy: { coins: 100, gems: 10 },
+      economy: { coins: 150, gems: 15 },
       inventory: {
-        food_apple: 3,
-        food_water: 5
+        food_apple: 5,
+        food_water: 5,
+        food_burger: 2,
+        food_juice: 2
       },
       statistics: {
         mealsGiven: 0,
@@ -888,21 +885,23 @@
       settings: { theme: 'default' }
     };
 
-    // Items Catalog
     window.ITEMS = {
-      food_apple: { id: 'food_apple', name: 'Maçã', type: 'food', icon: '🍎', price: 10, fillHunger: 20 },
-      food_burger: { id: 'food_burger', name: 'Hambúrguer', type: 'food', icon: '🍔', price: 30, fillHunger: 50 },
-      food_water: { id: 'food_water', name: 'Água', type: 'drink', icon: '💧', price: 5, fillThirst: 30 },
-      food_juice: { id: 'food_juice', name: 'Suco', type: 'drink', icon: '🧃', price: 15, fillThirst: 50 }
+      food_apple: { id: 'food_apple', name: 'Maçã', type: 'food', icon: '🍎', price: 10, fillHunger: 25 },
+      food_burger: { id: 'food_burger', name: 'Hambúrguer', type: 'food', icon: '🍔', price: 30, fillHunger: 60 },
+      food_pizza: { id: 'food_pizza', name: 'Pizza', type: 'food', icon: '🍕', price: 40, fillHunger: 75 },
+      food_water: { id: 'food_water', name: 'Água', type: 'drink', icon: '💧', price: 5, fillThirst: 35 },
+      food_juice: { id: 'food_juice', name: 'Suco', type: 'drink', icon: '🧃', price: 15, fillThirst: 55 },
+      food_boba: { id: 'food_boba', name: 'Boba Tea', type: 'drink', icon: '🧋', price: 25, fillThirst: 80 },
+      item_medicine: { id: 'item_medicine', name: 'Remédio', type: 'cure', icon: '💊', price: 50, fillHealth: 50 }
     };
 
-    // Global State
     window.GameState = null;
     window.CurrentUser = null;
+    let realtimeUnsubscribe = null;
 
-    // Save Manager
     window.SaveManager = {
       debounceTimer: null,
+      isLocalChange: false,
       
       showIndicator(msg, duration = 1500) {
         const ind = document.getElementById('sync-indicator');
@@ -911,44 +910,49 @@
         setTimeout(() => ind.classList.remove('active'), duration);
       },
 
-      async loadGame(uid) {
-        try {
-          const userRef = ref(db, `virtualPet/users/${uid}`);
-          const snapshot = await get(userRef);
+      initRealtimeListener(uid) {
+        if (realtimeUnsubscribe) realtimeUnsubscribe();
+
+        const userRef = ref(db, `virtualPet/users/${uid}`);
+        realtimeUnsubscribe = onValue(userRef, (snapshot) => {
+          if (this.isLocalChange) {
+            this.isLocalChange = false;
+            return;
+          }
+
           if (snapshot.exists()) {
-            let data = snapshot.val();
-            window.GameState = this.migrateSave(data);
+            window.GameState = snapshot.val();
           } else {
             window.GameState = JSON.parse(JSON.stringify(DEFAULT_SAVE));
+            this.saveGame(true);
           }
-          this.calculateOfflineProgression();
-          return true;
-        } catch (e) {
-          console.error("Erro ao carregar dados:", e);
-          window.GameState = JSON.parse(JSON.stringify(DEFAULT_SAVE));
-          return false;
-        }
-      },
 
-      migrateSave(data) {
-        if (!data.saveVersion) data.saveVersion = 1;
-        // Futuras migrações entram aqui
-        return data;
+          this.calculateOfflineProgression();
+
+          if (!window.GameState.pet.created) {
+            UI.showScreen('screen-creation');
+          } else {
+            UI.showScreen('screen-game');
+            Game.renderPet();
+            UI.renderBars();
+            UI.setTheme(window.GameState.settings.theme || 'default');
+          }
+        });
       },
 
       calculateOfflineProgression() {
+        if (!window.GameState || !window.GameState.needs) return;
         const now = Date.now();
         const last = window.GameState.needs.lastUpdated || now;
         const diffMinutes = Math.floor((now - last) / (1000 * 60));
 
         if (diffMinutes > 0) {
-          // Decaimento proporcional suave por minuto offline
           const needs = window.GameState.needs;
-          needs.hunger = Math.max(0, needs.hunger - diffMinutes * 0.1);
-          needs.thirst = Math.max(0, needs.thirst - diffMinutes * 0.15);
-          needs.hygiene = Math.max(0, needs.hygiene - diffMinutes * 0.05);
-          needs.energy = Math.max(0, needs.energy - diffMinutes * 0.08);
-          needs.happiness = Math.max(0, needs.happiness - diffMinutes * 0.1);
+          needs.hunger = Math.max(0, needs.hunger - diffMinutes * 0.12);
+          needs.thirst = Math.max(0, needs.thirst - diffMinutes * 0.18);
+          needs.hygiene = Math.max(0, needs.hygiene - diffMinutes * 0.08);
+          needs.energy = Math.max(0, needs.energy - diffMinutes * 0.1);
+          needs.happiness = Math.max(0, needs.happiness - diffMinutes * 0.12);
           needs.lastUpdated = now;
         }
       },
@@ -959,14 +963,15 @@
         window.GameState.needs.lastUpdated = Date.now();
         
         const doSave = async () => {
-          this.showIndicator("Salvando...");
+          this.showIndicator("Sincronizando...");
           try {
+            this.isLocalChange = true;
             const userRef = ref(db, `virtualPet/users/${window.CurrentUser.uid}`);
             await set(userRef, window.GameState);
-            this.showIndicator("Salvo!");
+            this.showIndicator("Salvo no Firebase!");
           } catch (e) {
-            console.error("Erro no salvamento:", e);
-            this.showIndicator("Erro ao Salvar");
+            this.isLocalChange = false;
+            this.showIndicator("Erro de Sincronização");
           }
         };
 
@@ -975,7 +980,7 @@
           doSave();
         } else {
           clearTimeout(this.debounceTimer);
-          this.debounceTimer = setTimeout(doSave, 2000);
+          this.debounceTimer = setTimeout(doSave, 1500);
         }
       },
 
@@ -983,29 +988,23 @@
         const str = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.GameState));
         const anchor = document.createElement('a');
         anchor.setAttribute("href", str);
-        anchor.setAttribute("download", `pet_save_${Date.now()}.json`);
+        anchor.setAttribute("download", `pet_save_deluxe_${Date.now()}.json`);
         document.body.appendChild(anchor);
         anchor.click();
         anchor.remove();
       }
     };
 
-    // Auth Module
     window.Auth = {
       init() {
-        onAuthStateChanged(auth, async (user) => {
+        onAuthStateChanged(auth, (user) => {
           if (user) {
             window.CurrentUser = user;
-            UI.showLoading("Carregando Save...");
-            await SaveManager.loadGame(user.uid);
-            
-            if (!window.GameState.pet.created) {
-              UI.showScreen('screen-creation');
-            } else {
-              Game.start();
-            }
+            UI.showLoading("Carregando Dados em Tempo Real...");
+            SaveManager.initRealtimeListener(user.uid);
           } else {
             window.CurrentUser = null;
+            if (realtimeUnsubscribe) realtimeUnsubscribe();
             UI.showScreen('screen-login');
           }
         });
@@ -1021,7 +1020,6 @@
       }
     };
 
-    // UI Engine
     window.UI = {
       showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -1041,6 +1039,8 @@
       },
       setTheme(theme) {
         document.body.setAttribute('data-theme', theme);
+        const sel = document.getElementById('setting-theme');
+        if (sel) sel.value = theme;
         if (window.GameState) {
           window.GameState.settings.theme = theme;
           SaveManager.saveGame();
@@ -1050,18 +1050,34 @@
         const bubble = document.getElementById('speech-bubble');
         bubble.innerText = text;
         bubble.classList.add('active');
-        setTimeout(() => bubble.classList.remove('active'), 2500);
+        setTimeout(() => bubble.classList.remove('active'), 2800);
+      },
+      addXP(amount) {
+        if (!window.GameState) return;
+        const pet = window.GameState.pet;
+        pet.xp += amount;
+        const requiredXP = pet.level * 100;
+        if (pet.xp >= requiredXP) {
+          pet.level++;
+          pet.xp -= requiredXP;
+          window.GameState.economy.coins += 50;
+          window.GameState.economy.gems += 5;
+          Sound.success();
+          this.speak(`Nível UP! Teuzin, alcancei o Nível ${pet.level}! 🎉`);
+        }
       },
       updateModalsContent() {
         if (!window.GameState) return;
 
-        // Populate Inventory / Food
         const invContainer = document.getElementById('list-inventory-food');
         invContainer.innerHTML = '';
-        Object.keys(window.GameState.inventory).forEach(itemId => {
+        let hasItems = false;
+
+        Object.keys(window.GameState.inventory || {}).forEach(itemId => {
           const count = window.GameState.inventory[itemId];
           const item = window.ITEMS[itemId];
           if (count > 0 && item) {
+            hasItems = true;
             const card = document.createElement('div');
             card.className = 'item-card';
             card.innerHTML = `
@@ -1077,7 +1093,10 @@
           }
         });
 
-        // Populate Shop
+        if (!hasItems) {
+          invContainer.innerHTML = '<p style="grid-column: 1/-1; text-align:center; opacity:0.6;">Sua mochila está vazia. Compre algo na loja!</p>';
+        }
+
         const shopContainer = document.getElementById('list-shop');
         shopContainer.innerHTML = '';
         Object.keys(window.ITEMS).forEach(itemId => {
@@ -1093,10 +1112,9 @@
           shopContainer.appendChild(card);
         });
 
-        // Update Stats
-        const stats = window.GameState.statistics;
+        const stats = window.GameState.statistics || {};
         document.getElementById('stats-summary').innerHTML = `
-          Refeições servidas: <b>${stats.mealsGiven || 0}</b><br>
+          Refeições oferecidas: <b>${stats.mealsGiven || 0}</b><br>
           Banhos tomados: <b>${stats.bathsGiven || 0}</b><br>
           Minijogos jogados: <b>${stats.minigamesPlayed || 0}</b>
         `;
@@ -1107,8 +1125,16 @@
 
         const updateBar = (id, val) => {
           const bounded = Math.max(0, Math.min(100, Math.round(val)));
-          document.getElementById(`bar-${id}`).style.width = `${bounded}%`;
-          document.getElementById(`txt-${id}`).innerText = `${bounded}%`;
+          const barEl = document.getElementById(`bar-${id}`);
+          const txtEl = document.getElementById(`txt-${id}`);
+          if (barEl) barEl.style.width = `${bounded}%`;
+          if (txtEl) txtEl.innerText = `${bounded}%`;
+
+          if (barEl) {
+            if (bounded < 25) barEl.style.backgroundColor = 'var(--danger)';
+            else if (bounded < 50) barEl.style.backgroundColor = 'var(--coin-color)';
+            else barEl.style.backgroundColor = 'var(--accent)';
+          }
         };
 
         updateBar('hunger', needs.hunger);
@@ -1125,36 +1151,56 @@
       }
     };
 
-    // Dynamic Pet SVG Renderer
     window.PetRenderer = {
       render(species, color) {
+        let ears = '';
+        let extraFeature = '';
+
+        switch(species) {
+          case 'gato':
+            ears = `<polygon points="25,35 15,10 40,25" fill="${color}" /><polygon points="75,35 85,10 60,25" fill="${color}" />`;
+            extraFeature = `<path d="M 20 55 L 5 50 M 20 58 L 5 58 M 20 61 L 5 66 M 80 55 L 95 50 M 80 58 L 95 58 M 80 61 L 95 66" stroke="#2d3436" stroke-width="1.5" />`;
+            break;
+          case 'coelho':
+            ears = `<ellipse cx="35" cy="20" rx="8" ry="22" fill="${color}" /><ellipse cx="65" cy="20" rx="8" ry="22" fill="${color}" />`;
+            break;
+          case 'raposa':
+            ears = `<polygon points="20,35 10,5 40,20" fill="${color}" /><polygon points="80,35 90,5 60,20" fill="${color}" />`;
+            extraFeature = `<polygon points="50,65 42,55 58,55" fill="#ffffff" />`;
+            break;
+          case 'panda':
+            ears = `<circle cx="25" cy="25" r="14" fill="#2d3436" /><circle cx="75" cy="25" r="14" fill="#2d3436" />`;
+            color = "#ffffff";
+            extraFeature = `<ellipse cx="38" cy="50" rx="7" ry="9" fill="#2d3436" /><ellipse cx="62" cy="50" rx="7" ry="9" fill="#2d3436" />`;
+            break;
+          case 'dragao':
+            ears = `<polygon points="20,25 5,15 25,40" fill="#e74c3c" /><polygon points="80,25 95,15 75,40" fill="#e74c3c" />`;
+            extraFeature = `<path d="M 40 20 L 50 10 L 60 20" fill="#f1c40f" />`;
+            break;
+          default:
+            ears = `<circle cx="25" cy="30" r="14" fill="${color}" /><circle cx="75" cy="30" r="14" fill="${color}" />`;
+            break;
+        }
+
         return `
           <svg class="pet-svg" viewBox="0 0 100 100">
             <g>
-              <!-- Ears -->
-              <circle cx="30" cy="30" r="12" fill="${color}" />
-              <circle cx="70" cy="30" r="12" fill="${color}" />
-              
-              <!-- Body / Head -->
-              <circle cx="50" cy="55" r="32" fill="${color}" />
-              
-              <!-- Eyes -->
-              <circle cx="40" cy="50" r="4" fill="#2d3436" />
-              <circle cx="60" cy="50" r="4" fill="#2d3436" />
-              <circle cx="41" cy="48" r="1.5" fill="#ffffff" />
-              <circle cx="61" cy="48" r="1.5" fill="#ffffff" />
-              
-              <!-- Snout & Mouth -->
-              <ellipse cx="50" cy="58" rx="6" ry="4" fill="#ffffff" />
-              <polygon points="50,56 47,54 53,54" fill="#2d3436" />
-              <path d="M 47 60 Q 50 63 53 60" stroke="#2d3436" stroke-width="1.5" fill="none" />
+              ${ears}
+              <circle cx="50" cy="58" r="34" fill="${color}" stroke="#2d3436" stroke-width="1.5" />
+              ${extraFeature}
+              <circle cx="38" cy="50" r="4.5" fill="#2d3436" />
+              <circle cx="62" cy="50" r="4.5" fill="#2d3436" />
+              <circle cx="39.5" cy="48" r="1.8" fill="#ffffff" />
+              <circle cx="63.5" cy="48" r="1.8" fill="#ffffff" />
+              <ellipse cx="50" cy="59" rx="6" ry="4" fill="#ffffff" />
+              <polygon points="50,58 47,55 53,55" fill="#2d3436" />
+              <path d="M 46 61 Q 50 64 54 61" stroke="#2d3436" stroke-width="1.8" fill="none" stroke-linecap="round" />
             </g>
           </svg>
         `;
       }
     };
 
-    // Game Core Logic
     window.Game = {
       loopInterval: null,
 
@@ -1163,39 +1209,38 @@
         this.renderPet();
         UI.setTheme(window.GameState.settings.theme || 'default');
         
-        // Setup Stage Touch
         document.getElementById('pet-stage').onclick = () => this.actions.petTouch();
 
-        // Main Loop (Decay + Render)
         clearInterval(this.loopInterval);
-        this.loopInterval = setInterval(() => this.tick(), 3000);
+        this.loopInterval = setInterval(() => this.tick(), 4000);
         
         UI.renderBars();
-        UI.speak("Senti sua falta, Teuzin!");
+        UI.speak("Que bom te ver, Teuzin!");
       },
 
       renderPet() {
+        if (!window.GameState || !window.GameState.pet) return;
         const pet = window.GameState.pet;
         const container = document.getElementById('pet-avatar');
-        container.innerHTML = PetRenderer.render(pet.species, pet.color);
+        if (container) {
+          container.innerHTML = PetRenderer.render(pet.species, pet.color);
+        }
       },
 
       tick() {
-        if (!window.GameState) return;
+        if (!window.GameState || !window.GameState.pet.created) return;
         const needs = window.GameState.needs;
 
-        // Passive decay
-        needs.hunger = Math.max(0, needs.hunger - 0.2);
-        needs.thirst = Math.max(0, needs.thirst - 0.3);
-        needs.hygiene = Math.max(0, needs.hygiene - 0.1);
-        needs.energy = Math.max(0, needs.energy - 0.15);
-        needs.happiness = Math.max(0, needs.happiness - 0.2);
+        needs.hunger = Math.max(0, needs.hunger - 0.25);
+        needs.thirst = Math.max(0, needs.thirst - 0.35);
+        needs.hygiene = Math.max(0, needs.hygiene - 0.15);
+        needs.energy = Math.max(0, needs.energy - 0.18);
+        needs.happiness = Math.max(0, needs.happiness - 0.22);
 
-        // Health impact
-        if (needs.hunger < 20 || needs.hygiene < 20) {
-          needs.health = Math.max(0, needs.health - 0.5);
+        if (needs.hunger < 20 || needs.hygiene < 20 || needs.thirst < 20) {
+          needs.health = Math.max(0, needs.health - 0.6);
         } else if (needs.health < 100) {
-          needs.health = Math.min(100, needs.health + 0.2);
+          needs.health = Math.min(100, needs.health + 0.3);
         }
 
         UI.renderBars();
@@ -1205,14 +1250,15 @@
       actions: {
         petTouch() {
           Sound.success();
-          window.GameState.needs.happiness = Math.min(100, window.GameState.needs.happiness + 5);
+          window.GameState.needs.happiness = Math.min(100, window.GameState.needs.happiness + 6);
+          UI.addXP(5);
           UI.renderBars();
           
           const avatar = document.getElementById('pet-avatar');
           avatar.classList.add('anim-happy');
           setTimeout(() => avatar.classList.remove('anim-happy'), 1000);
 
-          const msgs = ["Hehe! ❤️", "Que carinho bom!", "Adoro você!"];
+          const msgs = ["Hehe! ❤️", "Muito bom, Teuzin!", "Amo carinho!", "Você é demais!"];
           UI.speak(msgs[Math.floor(Math.random() * msgs.length)]);
           SaveManager.saveGame();
         },
@@ -1225,8 +1271,10 @@
             
             if (item.fillHunger) window.GameState.needs.hunger = Math.min(100, window.GameState.needs.hunger + item.fillHunger);
             if (item.fillThirst) window.GameState.needs.thirst = Math.min(100, window.GameState.needs.thirst + item.fillThirst);
+            if (item.fillHealth) window.GameState.needs.health = Math.min(100, window.GameState.needs.health + item.fillHealth);
             
             window.GameState.statistics.mealsGiven = (window.GameState.statistics.mealsGiven || 0) + 1;
+            UI.addXP(10);
             
             Sound.success();
             UI.speak("Nham nham! Delícia!");
@@ -1253,28 +1301,29 @@
         wash() {
           window.GameState.needs.hygiene = 100;
           window.GameState.statistics.bathsGiven = (window.GameState.statistics.bathsGiven || 0) + 1;
+          UI.addXP(8);
           
           const avatar = document.getElementById('pet-avatar');
           avatar.classList.add('anim-wash');
           setTimeout(() => avatar.classList.remove('anim-wash'), 1500);
 
           Sound.success();
-          UI.speak("Tô limpinho! 🧼");
+          UI.speak("Tô muito limpinho e cheiroso! 🧼");
           UI.renderBars();
           SaveManager.saveGame(true);
         },
 
         sleep() {
           window.GameState.needs.energy = 100;
+          UI.addXP(8);
           Sound.click();
-          UI.speak("Zzz... Boa noite! 🌙");
+          UI.speak("Zzz... Dormindo bem! 🌙");
           UI.renderBars();
           SaveManager.saveGame(true);
         }
       }
     };
 
-    // Creation Form Handler
     document.getElementById('btn-finish-creation').onclick = () => {
       const name = document.getElementById('create-name').value.trim() || "Pet";
       const species = document.getElementById('create-species').value;
@@ -1295,7 +1344,6 @@
       Game.start();
     };
 
-    // Minigames Manager
     window.Minigames = {
       active: false,
       loopId: null,
@@ -1307,24 +1355,29 @@
         
         const container = document.getElementById('minigame-container');
         container.innerHTML = `
-          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; padding:20px; width:100%;">
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; padding:20px; width:100%; justify-items:center; align-items:center; height:100%;">
             ${[1,1,2,2,3,3].sort(()=>Math.random()-0.5).map(v => `
-              <button class="btn btn-secondary" style="height:80px; font-size:1.5rem;" onclick="Minigames.clickCard(this, ${v})">❓</button>
+              <button class="btn btn-secondary" style="height:90px; width:100%; font-size:1.8rem;" onclick="Minigames.clickCard(this, ${v})">❓</button>
             `).join('')}
           </div>
         `;
+        window.GameState.statistics.minigamesPlayed = (window.GameState.statistics.minigamesPlayed || 0) + 1;
       },
 
       cardState: [],
       clickCard(btn, val) {
+        if (this.cardState.length >= 2 || btn.innerText !== '❓') return;
+
         Sound.click();
         btn.innerText = val === 1 ? '🍎' : val === 2 ? '⚽' : '⭐';
         this.cardState.push({btn, val});
+
         if (this.cardState.length === 2) {
           if (this.cardState[0].val === this.cardState[1].val) {
             Sound.success();
             this.cardState = [];
-            window.GameState.economy.coins += 15;
+            window.GameState.economy.coins += 20;
+            UI.addXP(15);
             UI.renderBars();
             SaveManager.saveGame();
           } else {
@@ -1343,16 +1396,20 @@
         
         const canvas = document.getElementById('minigame-canvas');
         const ctx = canvas.getContext('2d');
-        canvas.width = canvas.parentElement.clientWidth;
-        canvas.height = canvas.parentElement.clientHeight;
+        
+        setTimeout(() => {
+          canvas.width = canvas.parentElement.clientWidth;
+          canvas.height = canvas.parentElement.clientHeight;
+        }, 100);
 
-        let playerX = canvas.width / 2;
+        let playerX = canvas.width / 2 || 150;
         let score = 0;
-        let food = { x: Math.random() * (canvas.width - 20), y: 0, speed: 3 };
+        let food = { x: Math.random() * (canvas.width - 30) + 15, y: 0, speed: 3.5 };
 
         const touchHandler = (e) => {
           const rect = canvas.getBoundingClientRect();
-          playerX = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+          const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+          playerX = clientX - rect.left;
         };
 
         canvas.ontouchstart = touchHandler;
@@ -1360,33 +1417,35 @@
         canvas.onmousemove = touchHandler;
 
         this.active = true;
+        window.GameState.statistics.minigamesPlayed = (window.GameState.statistics.minigamesPlayed || 0) + 1;
+
         const loop = () => {
           if (!this.active) return;
-          ctx.clearRect(0,0, canvas.width, canvas.height);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-          // Food
           food.y += food.speed;
-          ctx.font = "24px sans-serif";
-          ctx.fillText("🍎", food.x, food.y);
+          ctx.font = "28px sans-serif";
+          ctx.fillText("🍎", food.x - 14, food.y);
 
-          // Player
-          ctx.fillStyle = "#ff8b94";
-          ctx.fillRect(playerX - 25, canvas.height - 30, 50, 15);
+          ctx.fillStyle = "#ff7675";
+          ctx.beginPath();
+          ctx.roundRect(playerX - 30, canvas.height - 35, 60, 16, 8);
+          ctx.fill();
 
-          // Catch Check
-          if (food.y >= canvas.height - 30 && Math.abs(food.x - playerX) < 35) {
+          if (food.y >= canvas.height - 35 && Math.abs(food.x - playerX) < 40) {
             Sound.success();
             score += 5;
-            window.GameState.economy.coins += 5;
+            window.GameState.economy.coins += 8;
+            UI.addXP(5);
             UI.renderBars();
-            food = { x: Math.random() * (canvas.width - 20), y: 0, speed: 3 + score * 0.1 };
+            food = { x: Math.random() * (canvas.width - 40) + 20, y: 0, speed: 3.5 + score * 0.1 };
           } else if (food.y > canvas.height) {
-            food = { x: Math.random() * (canvas.width - 20), y: 0, speed: 3 + score * 0.1 };
+            food = { x: Math.random() * (canvas.width - 40) + 20, y: 0, speed: 3.5 + score * 0.1 };
           }
 
-          ctx.fillStyle = "#2d3436";
-          ctx.font = "16px sans-serif";
-          ctx.fillText(`Moedas: ${score}`, 10, 25);
+          ctx.fillStyle = "var(--text-main)";
+          ctx.font = "bold 16px sans-serif";
+          ctx.fillText(`Moedas: +${score}`, 15, 30);
 
           this.loopId = requestAnimationFrame(loop);
         };
@@ -1401,7 +1460,6 @@
       }
     };
 
-    // Initialize Application
     window.addEventListener('load', () => {
       Auth.init();
     });
