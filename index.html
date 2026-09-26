@@ -200,81 +200,45 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.8);
+      background: transparent;
       display: none;
       justify-content: center;
       align-items: center;
       z-index: 40;
-      backdrop-filter: blur(8px);
     }
 
     .settings-card {
-      background: #222;
-      width: 90%;
-      max-width: 400px;
-      border-radius: 20px;
-      border: 1px solid #444;
+      background: rgba(0, 0, 0, 0.5);
+      width: 260px;
+      border-radius: 15px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
       display: flex;
       flex-direction: column;
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      padding: 15px;
+      gap: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
       color: white;
+      backdrop-filter: blur(8px);
     }
 
     .settings-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 15px 20px;
-      background: #2d2d2d;
-      border-bottom: 1px solid #444;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 8px;
     }
 
     .settings-header h3 {
-      font-size: 18px;
+      font-size: 16px;
     }
 
     .close-btn {
       background: transparent;
       border: none;
       color: #aaa;
-      font-size: 22px;
+      font-size: 18px;
       cursor: pointer;
-    }
-
-    .settings-tabs {
-      display: flex;
-      background: #1a1a1a;
-      border-bottom: 1px solid #444;
-    }
-
-    .tab-btn {
-      flex: 1;
-      padding: 12px 0;
-      background: transparent;
-      border: none;
-      color: #888;
-      font-weight: bold;
-      font-size: 14px;
-      cursor: pointer;
-      border-bottom: 3px solid transparent;
-      transition: color 0.2s, border-color 0.2s;
-    }
-
-    .tab-btn.active {
-      color: #ff4757;
-      border-color: #ff4757;
-    }
-
-    .tab-content {
-      padding: 20px;
-      display: none;
-      flex-direction: column;
-      gap: 15px;
-    }
-
-    .tab-content.active {
-      display: flex;
     }
 
     .setting-item {
@@ -286,12 +250,12 @@
 
     .toggle-switch {
       position: relative;
-      width: 44px;
-      height: 24px;
+      width: 40px;
+      height: 20px;
       appearance: none;
-      background: #444;
+      background: rgba(255, 255, 255, 0.2);
       outline: none;
-      border-radius: 12px;
+      border-radius: 10px;
       cursor: pointer;
       transition: background 0.3s;
     }
@@ -303,8 +267,8 @@
     .toggle-switch::before {
       content: '';
       position: absolute;
-      width: 18px;
-      height: 18px;
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
       top: 3px;
       left: 3px;
@@ -322,13 +286,14 @@
       left: 50%;
       transform: translateX(-50%);
       display: flex;
-      gap: 10px;
+      gap: 8px;
       z-index: 10;
       background: rgba(0, 0, 0, 0.6);
-      padding: 8px 15px;
+      padding: 8px 12px;
       border-radius: 25px;
       backdrop-filter: blur(5px);
-      max-width: 90vw;
+      max-width: 95vw;
+      align-items: center;
     }
 
     #chat-input {
@@ -337,22 +302,69 @@
       border-radius: 15px;
       outline: none;
       font-size: 14px;
-      width: 220px;
+      width: 180px;
     }
 
     .action-btn {
       background: #ff4757;
       color: white;
       border: none;
-      padding: 8px 15px;
-      border-radius: 15px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
       cursor: pointer;
       font-weight: bold;
+      font-size: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-shrink: 0;
     }
 
-    #kiss-btn {
+    #interaction-btn {
       background: #ff6b81;
       display: none;
+    }
+
+    #sleep-btn {
+      background: #70a1ff;
+      display: none;
+    }
+
+    #interaction-modal {
+      position: absolute;
+      bottom: 75px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 15px;
+      padding: 10px;
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 20;
+      backdrop-filter: blur(10px);
+      width: 180px;
+    }
+
+    .interaction-option {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+
+    .interaction-option:active {
+      background: rgba(255, 255, 255, 0.3);
     }
 
     #photo-modal {
@@ -386,48 +398,6 @@
       cursor: pointer;
       font-weight: bold;
     }
-
-    #kiss-request-modal {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.85);
-      border: 2px solid #ff6b81;
-      border-radius: 20px;
-      padding: 20px 30px;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 15px;
-      z-index: 50;
-      box-shadow: 0 0 15px rgba(255, 107, 129, 0.5);
-      color: white;
-    }
-
-    #kiss-request-modal span {
-      font-size: 18px;
-      font-weight: bold;
-    }
-
-    .kiss-request-buttons {
-      display: flex;
-      gap: 15px;
-    }
-
-    .kiss-request-buttons button {
-      background: #ff4757;
-      border: none;
-      font-size: 20px;
-      padding: 10px 20px;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: transform 0.1s;
-    }
-
-    .kiss-request-buttons button:active {
-      transform: scale(0.9);
-    }
   </style>
 </head>
 <body>
@@ -448,7 +418,6 @@
     <button class="nav-arrow" id="prev-room-btn">◀</button>
     <div id="room-title">Sala</div>
     <div id="top-right-controls">
-      <button class="icon-btn" id="audio-control">🎵</button>
       <button class="icon-btn" id="settings-btn">⚙️</button>
     </div>
     <button class="nav-arrow" id="next-room-btn">▶</button>
@@ -458,9 +427,20 @@
     <canvas id="gameCanvas"></canvas>
   </div>
 
+  <div id="interaction-modal">
+    <button class="interaction-option" data-action="hug">🤗 Abraçar</button>
+    <button class="interaction-option" data-action="kiss">😘 Beijar</button>
+    <button class="interaction-option" data-action="greet">🤝 Saudação</button>
+    <button class="interaction-option" data-action="tickle">😂 Cócegas</button>
+    <button class="interaction-option" data-action="affection">🥰 Carinho</button>
+    <button class="interaction-option" data-action="fight">😡 Brigar</button>
+    <button class="interaction-option" data-action="bye">👋 Até mais</button>
+  </div>
+
   <div id="chat-container">
     <input type="text" id="chat-input" placeholder="Digite uma mensagem..." maxlength="40">
-    <button class="action-btn" id="kiss-btn">😘</button>
+    <button class="action-btn" id="sleep-btn">😴</button>
+    <button class="action-btn" id="interaction-btn">❓️</button>
   </div>
 
   <div id="settings-modal">
@@ -469,32 +449,17 @@
         <h3>Configurações</h3>
         <button class="close-btn" id="close-settings-btn">✖</button>
       </div>
-      <div class="settings-tabs">
-        <button class="tab-btn active" data-tab="tab-player">Perfil</button>
-        <button class="tab-btn" data-tab="tab-audio">Áudio</button>
-        <button class="tab-btn" data-tab="tab-effects">Efeitos</button>
+      <div class="setting-item">
+        <span>Personagem</span>
+        <button class="role-btn role-btn-boy" id="switch-role-btn" style="width: auto; padding: 5px 10px; font-size: 12px; box-shadow: none;">Trocar</button>
       </div>
-      <div class="tab-content active" id="tab-player">
-        <div class="setting-item">
-          <span>Trocar Personagem</span>
-          <button class="role-btn role-btn-boy" id="switch-role-btn" style="width: auto; padding: 8px 15px; font-size: 14px;">Alternar 👦/👧</button>
-        </div>
+      <div class="setting-item">
+        <span>Música</span>
+        <input type="checkbox" class="toggle-switch" id="toggle-bgm">
       </div>
-      <div class="tab-content" id="tab-audio">
-        <div class="setting-item">
-          <span>Música de Fundo</span>
-          <input type="checkbox" class="toggle-switch" id="toggle-bgm">
-        </div>
-        <div class="setting-item">
-          <span>Efeitos Sonoros</span>
-          <input type="checkbox" class="toggle-switch" id="toggle-sfx" checked>
-        </div>
-      </div>
-      <div class="tab-content" id="tab-effects">
-        <div class="setting-item">
-          <span>Sons de Clique</span>
-          <input type="checkbox" class="toggle-switch" id="toggle-clicks" checked>
-        </div>
+      <div class="setting-item">
+        <span>Toque</span>
+        <input type="checkbox" class="toggle-switch" id="toggle-clicks" checked>
       </div>
     </div>
   </div>
@@ -502,14 +467,6 @@
   <div id="photo-modal">
     <img id="modal-img" src="photo.png" alt="Recordação">
     <button id="close-photo">✖️</button>
-  </div>
-
-  <div id="kiss-request-modal">
-    <span>Aceitar 😘 ?</span>
-    <div class="kiss-request-buttons">
-      <button id="accept-kiss-btn">👍</button>
-      <button id="reject-kiss-btn">👎</button>
-    </div>
   </div>
 
   <audio id="bg-music" loop src="music.mp3"></audio>
@@ -551,12 +508,8 @@
     let isDragging = false;
     let lastSaveTime = 0;
 
-    let activeKissEffect = false;
-    let kissEffectEndTime = 0;
-
     let settings = {
       bgm: false,
-      sfx: true,
       clicks: true
     };
 
@@ -585,8 +538,8 @@
     };
 
     const players = {
-      boy: { x: 30, y: 50, room: 'wall1', msg: '', msgTime: 0 },
-      girl: { x: 70, y: 50, room: 'wall1', msg: '', msgTime: 0 }
+      boy: { x: 30, y: 50, room: 'wall1', msg: '', msgTime: 0, isSleeping: false, reactionEmoji: '', reactionTime: 0 },
+      girl: { x: 70, y: 50, room: 'wall1', msg: '', msgTime: 0, isSleeping: false, reactionEmoji: '', reactionTime: 0 }
     };
 
     const images = {
@@ -631,29 +584,16 @@
     function updateAudioState() {
       if (settings.bgm) {
         bgMusic.play().catch(() => {});
-        document.getElementById('audio-control').innerText = '🎵';
       } else {
         bgMusic.pause();
-        document.getElementById('audio-control').innerText = '🔇';
       }
       document.getElementById('toggle-bgm').checked = settings.bgm;
     }
-
-    document.getElementById('audio-control').addEventListener('click', () => {
-      playClickSound();
-      settings.bgm = !settings.bgm;
-      updateAudioState();
-    });
 
     document.getElementById('toggle-bgm').addEventListener('change', (e) => {
       playClickSound();
       settings.bgm = e.target.checked;
       updateAudioState();
-    });
-
-    document.getElementById('toggle-sfx').addEventListener('change', (e) => {
-      playClickSound();
-      settings.sfx = e.target.checked;
     });
 
     document.getElementById('toggle-clicks').addEventListener('change', (e) => {
@@ -671,16 +611,6 @@
       document.getElementById('settings-modal').style.display = 'none';
     });
 
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        playClickSound();
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        e.target.classList.add('active');
-        document.getElementById(e.target.getAttribute('data-tab')).classList.add('active');
-      });
-    });
-
     document.getElementById('switch-role-btn').addEventListener('click', () => {
       playClickSound();
       document.getElementById('settings-modal').style.display = 'none';
@@ -692,11 +622,17 @@
     function updateRoomDisplay() {
       currentRoom = roomKeys[currentRoomIndex];
       document.getElementById('room-title').innerText = roomNames[currentRoom];
+      
       if (myRole) {
         players[myRole].room = currentRoom;
+        if (currentRoom !== 'wall2' && players[myRole].isSleeping) {
+          players[myRole].isSleeping = false;
+        }
         savePositionThrottled(true);
       }
-      checkProximity();
+      
+      document.getElementById('interaction-modal').style.display = 'none';
+      checkControlsVisibility();
       render();
     }
 
@@ -739,42 +675,17 @@
               if (data) {
                 if (data.boy) players.boy = data.boy;
                 if (data.girl) players.girl = data.girl;
-                checkProximity();
+                checkControlsVisibility();
                 render();
               }
             });
           });
 
-          const kissRequestRef = ref(db, 'teuzin_games/game_state/kiss_request');
-          onValue(kissRequestRef, (snapshot) => {
-            const data = snapshot.val();
-            const kissModal = document.getElementById('kiss-request-modal');
-            if (data && data.status === 'pending') {
-              if (data.from !== myRole) {
-                kissModal.style.display = 'flex';
-              } else {
-                kissModal.style.display = 'none';
-              }
-            } else {
-              kissModal.style.display = 'none';
-            }
-          });
-
-          const kissEventRef = ref(db, 'teuzin_games/game_state/kiss_event');
-          onValue(kissEventRef, (snapshot) => {
+          const interactionRef = ref(db, 'teuzin_games/game_state/interaction_event');
+          onValue(interactionRef, (snapshot) => {
             const data = snapshot.val();
             if (data && Date.now() - data.time < 3000) {
-              if (data.status === 'accepted') {
-                triggerKissAction();
-              } else if (data.status === 'rejected') {
-                if (data.from === myRole) {
-                  const partnerRole = myRole === 'boy' ? 'girl' : 'boy';
-                  const partnerName = roleNames[partnerRole];
-                  players[myRole].msg = `${partnerName} Recusou 💔`;
-                  players[myRole].msgTime = Date.now();
-                  savePositionThrottled(true);
-                }
-              }
+              applyInteraction(data.action, data.from);
             }
           });
 
@@ -795,64 +706,74 @@
     document.getElementById('btn-boy').addEventListener('click', () => selectRole('boy'));
     document.getElementById('btn-girl').addEventListener('click', () => selectRole('girl'));
 
-    function checkProximity() {
-      const kissBtn = document.getElementById('kiss-btn');
+    function checkControlsVisibility() {
+      const interactionBtn = document.getElementById('interaction-btn');
+      const sleepBtn = document.getElementById('sleep-btn');
+
+      if (currentRoom === 'wall2') {
+        sleepBtn.style.display = 'flex';
+      } else {
+        sleepBtn.style.display = 'none';
+      }
+
       if (players.boy.room === currentRoom && players.girl.room === currentRoom) {
         const dist = Math.hypot(players.boy.x - players.girl.x, players.boy.y - players.girl.y);
         if (dist < 20) {
-          kissBtn.style.display = 'block';
+          interactionBtn.style.display = 'flex';
           return;
         }
       }
-      kissBtn.style.display = 'none';
+      interactionBtn.style.display = 'none';
+      document.getElementById('interaction-modal').style.display = 'none';
     }
 
-    document.getElementById('kiss-btn').addEventListener('click', () => {
+    document.getElementById('interaction-btn').addEventListener('click', () => {
+      playClickSound();
+      const modal = document.getElementById('interaction-modal');
+      modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+    });
+
+    document.getElementById('sleep-btn').addEventListener('click', () => {
       playClickSound();
       if (!myRole) return;
-      set(ref(db, 'teuzin_games/game_state/kiss_request'), {
-        from: myRole,
-        status: 'pending',
-        time: Date.now()
-      });
+      players[myRole].isSleeping = !players[myRole].isSleeping;
+      savePositionThrottled(true);
+      render();
     });
 
-    document.getElementById('accept-kiss-btn').addEventListener('click', () => {
-      playClickSound();
-      set(ref(db, 'teuzin_games/game_state/kiss_request'), null);
-      set(ref(db, 'teuzin_games/game_state/kiss_event'), {
-        status: 'accepted',
-        time: Date.now()
-      });
-    });
-
-    document.getElementById('reject-kiss-btn').addEventListener('click', () => {
-      playClickSound();
-      const kissRequestRef = ref(db, 'teuzin_games/game_state/kiss_request');
-      onValue(kissRequestRef, (snapshot) => {
-        const data = snapshot.val();
-        const requester = data ? data.from : (myRole === 'boy' ? 'girl' : 'boy');
-        set(ref(db, 'teuzin_games/game_state/kiss_request'), null);
-        set(ref(db, 'teuzin_games/game_state/kiss_event'), {
-          status: 'rejected',
-          from: requester,
+    document.querySelectorAll('.interaction-option').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        playClickSound();
+        const action = e.currentTarget.getAttribute('data-action');
+        document.getElementById('interaction-modal').style.display = 'none';
+        
+        set(ref(db, 'teuzin_games/game_state/interaction_event'), {
+          action: action,
+          from: myRole,
           time: Date.now()
         });
-      }, { onlyOnce: true });
+      });
     });
 
-    function triggerKissAction() {
-      activeKissEffect = true;
-      kissEffectEndTime = Date.now() + 2000;
-      animateKiss();
-    }
+    function applyInteraction(action, fromRole) {
+      const now = Date.now();
+      const targetRole = fromRole === 'boy' ? 'girl' : 'boy';
 
-    function animateKiss() {
-      if (Date.now() < kissEffectEndTime) {
-        render();
-        requestAnimationFrame(animateKiss);
-      } else {
-        activeKissEffect = false;
+      const map = {
+        hug: { from: '🤗', target: '🤗' },
+        kiss: { from: '😘', target: '😘' },
+        greet: { from: '🤝', target: '🤝' },
+        tickle: { from: '😁', target: '🤣' },
+        affection: { from: '☺️', target: '🥰' },
+        fight: { from: '😡', target: '😓' },
+        bye: { from: '👋', target: '👋' }
+      };
+
+      if (map[action]) {
+        players[fromRole].reactionEmoji = map[action].from;
+        players[fromRole].reactionTime = now;
+        players[targetRole].reactionEmoji = map[action].target;
+        players[targetRole].reactionTime = now;
         render();
       }
     }
@@ -877,10 +798,10 @@
       ctx.textAlign = 'left';
     }
 
-    function renderHeadEmoji(x, y) {
+    function renderHeadEmoji(x, y, emoji) {
       ctx.font = '30px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('👩‍❤️‍💋‍👨', x, y - 10);
+      ctx.fillText(emoji, x, y - 10);
       ctx.textAlign = 'left';
     }
 
@@ -905,23 +826,32 @@
       ['boy', 'girl'].forEach(role => {
         const p = players[role];
         if (p.room === currentRoom) {
-          const xPx = (p.x / 100) * canvas.width - (charWidth / 2);
-          const yPx = (p.y / 100) * canvas.height - (charHeight / 2);
+          const xPx = (p.x / 100) * canvas.width;
+          const yPx = (p.y / 100) * canvas.height;
+
+          ctx.save();
+          ctx.translate(xPx, yPx);
+
+          if (p.isSleeping) {
+            ctx.rotate(90 * Math.PI / 180);
+          }
 
           const img = images[role];
           if (img.complete && img.naturalWidth !== 0) {
-            ctx.drawImage(img, xPx, yPx, charWidth, charHeight);
+            ctx.drawImage(img, -charWidth / 2, -charHeight / 2, charWidth, charHeight);
           } else {
             ctx.fillStyle = role === 'boy' ? '#2ed573' : '#ff6b81';
-            ctx.fillRect(xPx, yPx, charWidth, charHeight);
+            ctx.fillRect(-charWidth / 2, -charHeight / 2, charWidth, charHeight);
           }
 
-          if (activeKissEffect && Date.now() < kissEffectEndTime) {
-            renderHeadEmoji((p.x / 100) * canvas.width, yPx);
+          ctx.restore();
+
+          if (p.reactionEmoji && Date.now() - p.reactionTime < 3000) {
+            renderHeadEmoji(xPx, yPx - (charHeight / 2));
           }
 
           if (p.msg && Date.now() - p.msgTime < 5000) {
-            renderSpeechBubble((p.x / 100) * canvas.width, yPx, p.msg);
+            renderSpeechBubble(xPx, yPx - (charHeight / 2), p.msg);
           }
         }
       });
@@ -988,7 +918,7 @@
       players[myRole].x = Math.max(5, Math.min(95, coords.xPct));
       players[myRole].y = Math.max(5, Math.min(95, coords.yPct));
 
-      checkProximity();
+      checkControlsVisibility();
       render();
       savePositionThrottled();
     }
@@ -1019,7 +949,8 @@
           y: players[myRole].y,
           room: players[myRole].room,
           msg: players[myRole].msg || '',
-          msgTime: players[myRole].msgTime || 0
+          msgTime: players[myRole].msgTime || 0,
+          isSleeping: players[myRole].isSleeping || false
         });
         lastSaveTime = now;
       }
