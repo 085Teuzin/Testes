@@ -2,804 +2,522 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>My Virtual Pet - Deluxe Edition</title>
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Nosso Cantinho 2D - Teuzin & Daily</title>
   <style>
-    :root {
-      --bg-primary: #81ecec;
-      --bg-secondary: #00cec9;
-      --card-bg: #ffffff;
-      --text-main: #2d3436;
-      --accent: #ff7675;
-      --accent-hover: #d63031;
-      --coin-color: #f1c40f;
-      --gem-color: #9b59b6;
-      --danger: #e74c3c;
-      --success: #2ecc71;
-      --shadow: 0 10px 30px rgba(0,0,0,0.15);
-      --radius: 20px;
-    }
-
-    [data-theme="dark"] {
-      --bg-primary: #0f172a;
-      --bg-secondary: #1e293b;
-      --card-bg: #1e293b;
-      --text-main: #f8fafc;
-      --accent: #ff6b6b;
-      --accent-hover: #ee5253;
-      --shadow: 0 10px 30px rgba(0,0,0,0.5);
-    }
-
-    [data-theme="cozy"] {
-      --bg-primary: #fce4ec;
-      --bg-secondary: #f8bbd0;
-      --card-bg: #fff5f8;
-      --text-main: #4a154b;
-      --accent: #e91e63;
-      --accent-hover: #c2185b;
-      --shadow: 0 10px 30px rgba(74,21,75,0.15);
-    }
-
-    [data-theme="cyberpunk"] {
-      --bg-primary: #050505;
-      --bg-secondary: #121212;
-      --card-bg: #181818;
-      --text-main: #00ffcc;
-      --accent: #ff007f;
-      --accent-hover: #ff0055;
-      --shadow: 0 0 20px rgba(0, 255, 204, 0.2);
-    }
-
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
       user-select: none;
       -webkit-user-select: none;
-      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
 
     body, html {
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background-color: var(--bg-primary);
-      color: var(--text-main);
-      transition: background-color 0.4s ease;
-    }
-
-    #app {
-      width: 100%;
-      height: 100%;
+      background-color: #1a1a1a;
+      font-family: Arial, sans-serif;
       display: flex;
       flex-direction: column;
-      position: relative;
+      align-items: center;
+      justify-content: center;
     }
 
-    .screen {
+    #game-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    canvas {
+      background-size: cover;
+      background-position: center;
+      touch-action: none;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+
+    #top-bar {
+      position: absolute;
+      top: 15px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .nav-arrow {
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      font-size: 22px;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      pointer-events: auto;
+      backdrop-filter: blur(5px);
+      transition: transform 0.1s, background 0.2s;
+    }
+
+    .nav-arrow:active {
+      transform: scale(0.9);
+    }
+
+    #room-title {
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 16px;
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    #top-right-controls {
+      display: flex;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .icon-btn {
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      cursor: pointer;
+      font-size: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: transform 0.1s;
+    }
+
+    .icon-btn:active {
+      transform: scale(0.9);
+    }
+
+    #role-modal {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
+      background-image: url('wall5.png');
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      z-index: 30;
+      color: white;
+    }
+
+    #role-modal::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: -1;
+    }
+
+    .role-btn {
+      padding: 15px 30px;
+      font-size: 18px;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      width: 200px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    .role-btn:active {
+      transform: scale(0.95);
+    }
+
+    .role-btn-boy { background: #2ed573; color: white; }
+    .role-btn-girl { background: #ff6b81; color: white; }
+
+    #loading-modal {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
       display: none;
       flex-direction: column;
-      z-index: 10;
-      background-color: var(--bg-primary);
-    }
-
-    .screen.active {
-      display: flex;
-    }
-
-    #screen-loading {
       justify-content: center;
       align-items: center;
-      z-index: 100;
-      gap: 20px;
-    }
-
-    .spinner {
-      width: 60px;
-      height: 60px;
-      border: 6px solid rgba(255,255,255,0.3);
-      border-top: 6px solid var(--accent);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    #screen-login {
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-      text-align: center;
-      background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
-    }
-
-    .login-card {
-      background: var(--card-bg);
-      padding: 40px 30px;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      max-width: 420px;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-    }
-
-    .btn {
-      padding: 14px 28px;
-      border: none;
-      border-radius: 30px;
-      background-color: var(--accent);
-      color: white;
-      font-weight: bold;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-    }
-
-    .btn:hover {
-      background-color: var(--accent-hover);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-    }
-
-    .btn:active {
-      transform: translateY(1px);
-    }
-
-    .btn-secondary {
-      background-color: var(--bg-secondary);
-      color: var(--text-main);
-    }
-
-    #screen-creation {
-      padding: 20px;
-      overflow-y: auto;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .creation-container {
-      max-width: 500px;
-      width: 100%;
-      background: var(--card-bg);
-      padding: 30px;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .form-group label {
-      font-weight: bold;
-      font-size: 0.9rem;
-    }
-
-    .form-group input, .form-group select {
-      padding: 12px;
-      border-radius: 12px;
-      border: 2px solid rgba(0,0,0,0.08);
-      background: var(--card-bg);
-      color: var(--text-main);
-      font-size: 1rem;
-      outline: none;
-      transition: border 0.2s;
-    }
-
-    .form-group input:focus, .form-group select:focus {
-      border-color: var(--accent);
-    }
-
-    header {
-      padding: 12px 20px;
-      background: var(--card-bg);
-      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      z-index: 20;
-    }
-
-    .pet-info {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .pet-name-title {
-      font-weight: 800;
-      font-size: 1.2rem;
-    }
-
-    .level-badge {
-      font-size: 0.8rem;
-      background: var(--accent);
-      color: white;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-weight: bold;
-      width: fit-content;
-    }
-
-    .currencies {
-      display: flex;
       gap: 15px;
-      font-weight: bold;
-      font-size: 1.1rem;
+      z-index: 60;
+      color: white;
     }
 
-    .currency-item {
-      display: flex;
+    .progress-bar-container {
+      width: 200px;
+      height: 12px;
+      background: #333;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid #555;
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background: #ff4757;
+      transition: width 0.3s ease;
+    }
+
+    #settings-modal {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      justify-content: center;
       align-items: center;
-      gap: 6px;
-      background: rgba(0,0,0,0.05);
-      padding: 6px 12px;
-      border-radius: 20px;
+      z-index: 40;
+      backdrop-filter: blur(8px);
     }
 
-    .game-viewport {
-      flex: 1;
-      position: relative;
+    .settings-card {
+      background: #222;
+      width: 90%;
+      max-width: 400px;
+      border-radius: 20px;
+      border: 1px solid #444;
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      align-items: center;
       overflow: hidden;
-      background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0.08) 100%);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      color: white;
     }
 
-    .pet-stage {
-      position: relative;
-      width: 260px;
-      height: 260px;
+    .settings-header {
       display: flex;
-      justify-content: center;
+      justify-content: space-between;
       align-items: center;
+      padding: 15px 20px;
+      background: #2d2d2d;
+      border-bottom: 1px solid #444;
+    }
+
+    .settings-header h3 {
+      font-size: 18px;
+    }
+
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: #aaa;
+      font-size: 22px;
       cursor: pointer;
     }
 
-    .pet-avatar {
-      width: 220px;
-      height: 220px;
-      position: relative;
-      transition: transform 0.2s ease;
-    }
-
-    .pet-svg {
-      width: 100%;
-      height: 100%;
-      filter: drop-shadow(0 12px 20px rgba(0,0,0,0.2));
-    }
-
-    .anim-idle {
-      animation: idleBounce 3s ease-in-out infinite;
-    }
-
-    .anim-sleep {
-      animation: sleepZzz 4s ease-in-out infinite;
-      opacity: 0.85;
-    }
-
-    .anim-happy {
-      animation: happyJump 0.5s ease-in-out infinite alternate;
-    }
-
-    .anim-wash {
-      animation: washShake 0.3s ease-in-out infinite;
-    }
-
-    @keyframes idleBounce {
-      0%, 100% { transform: translateY(0) scale(1); }
-      50% { transform: translateY(-10px) scale(1.02, 0.98); }
-    }
-
-    @keyframes sleepZzz {
-      0%, 100% { transform: scale(0.96) rotate(-2deg); }
-      50% { transform: scale(1.02) rotate(2deg); }
-    }
-
-    @keyframes happyJump {
-      0% { transform: translateY(0); }
-      100% { transform: translateY(-30px); }
-    }
-
-    @keyframes washShake {
-      0% { transform: rotate(-5deg); }
-      100% { transform: rotate(5deg); }
-    }
-
-    .speech-bubble {
-      position: absolute;
-      top: -50px;
-      background: var(--card-bg);
-      padding: 10px 20px;
-      border-radius: 20px;
-      font-weight: bold;
-      font-size: 0.95rem;
-      box-shadow: var(--shadow);
-      pointer-events: none;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      white-space: nowrap;
-      z-index: 30;
-    }
-
-    .speech-bubble.active {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .status-container {
-      width: 100%;
-      padding: 12px 20px;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      background: var(--card-bg);
-      box-shadow: 0 -2px 10px rgba(0,0,0,0.03);
-    }
-
-    .status-bar-wrap {
+    .settings-tabs {
       display: flex;
-      flex-direction: column;
-      gap: 4px;
+      background: #1a1a1a;
+      border-bottom: 1px solid #444;
     }
 
-    .status-label {
-      font-size: 0.8rem;
+    .tab-btn {
+      flex: 1;
+      padding: 12px 0;
+      background: transparent;
+      border: none;
+      color: #888;
       font-weight: bold;
+      font-size: 14px;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .tab-btn.active {
+      color: #ff4757;
+      border-color: #ff4757;
+    }
+
+    .tab-content {
+      padding: 20px;
+      display: none;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .tab-content.active {
+      display: flex;
+    }
+
+    .setting-item {
       display: flex;
       justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
     }
 
-    .status-track {
-      width: 100%;
-      height: 10px;
-      background: rgba(0,0,0,0.08);
-      border-radius: 5px;
-      overflow: hidden;
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      appearance: none;
+      background: #444;
+      outline: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s;
     }
 
-    .status-fill {
-      height: 100%;
-      width: 100%;
-      background: var(--accent);
-      transition: width 0.4s ease, background-color 0.4s ease;
-      border-radius: 5px;
+    .toggle-switch:checked {
+      background: #2ed573;
     }
 
-    .action-bar {
+    .toggle-switch::before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      background: white;
+      transition: transform 0.3s;
+    }
+
+    .toggle-switch:checked::before {
+      transform: translateX(20px);
+    }
+
+    #chat-container {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
       display: flex;
-      justify-content: space-around;
-      padding: 12px;
-      background: var(--card-bg);
-      border-top: 1px solid rgba(0,0,0,0.05);
+      gap: 10px;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 15px;
+      border-radius: 25px;
+      backdrop-filter: blur(5px);
+      max-width: 90vw;
+    }
+
+    #chat-input {
+      border: none;
+      padding: 8px 15px;
+      border-radius: 15px;
+      outline: none;
+      font-size: 14px;
+      width: 220px;
     }
 
     .action-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      background: none;
+      background: #ff4757;
+      color: white;
       border: none;
-      color: var(--text-main);
-      font-size: 0.8rem;
-      font-weight: bold;
+      padding: 8px 15px;
+      border-radius: 15px;
       cursor: pointer;
-      padding: 8px 12px;
-      border-radius: 16px;
-      transition: background 0.2s, transform 0.1s;
+      font-weight: bold;
     }
 
-    .action-btn:hover {
-      background: rgba(0,0,0,0.05);
-      transform: translateY(-2px);
+    #kiss-btn {
+      background: #ff6b81;
+      display: none;
     }
 
-    .action-icon {
-      font-size: 1.6rem;
-    }
-
-    .modal-overlay {
+    #photo-modal {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.6);
-      backdrop-filter: blur(4px);
+      background: rgba(0,0,0,0.85);
       display: none;
-      justify-content: center;
-      align-items: flex-end;
-      z-index: 50;
-      opacity: 0;
-      transition: opacity 0.25s ease;
-    }
-
-    .modal-overlay.active {
-      display: flex;
-      opacity: 1;
-    }
-
-    .modal-card {
-      background: var(--card-bg);
-      width: 100%;
-      max-width: 600px;
-      max-height: 85%;
-      border-radius: var(--radius) var(--radius) 0 0;
-      padding: 24px;
-      display: flex;
       flex-direction: column;
-      gap: 18px;
-      box-shadow: var(--shadow);
-      transform: translateY(100%);
-      transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
-      overflow: hidden;
-    }
-
-    .modal-overlay.active .modal-card {
-      transform: translateY(0);
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
-      border-bottom: 2px solid rgba(0,0,0,0.05);
-      padding-bottom: 12px;
+      z-index: 40;
     }
 
-    .modal-title {
-      font-size: 1.3rem;
-      font-weight: 800;
+    #photo-modal img {
+      max-width: 80%;
+      max-height: 70%;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(255,255,255,0.2);
     }
 
-    .modal-close {
-      background: rgba(0,0,0,0.05);
+    #close-photo {
+      margin-top: 15px;
+      background: #ff4757;
+      color: white;
       border: none;
-      font-size: 1.2rem;
-      cursor: pointer;
-      color: var(--text-main);
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .modal-body {
-      overflow-y: auto;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .grid-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-      gap: 12px;
-    }
-
-    .item-card {
-      background: rgba(0,0,0,0.03);
-      border: 2px solid rgba(0,0,0,0.05);
-      border-radius: 16px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      text-align: center;
-      cursor: pointer;
-      position: relative;
-      transition: transform 0.2s, border-color 0.2s;
-    }
-
-    .item-card:hover {
-      transform: scale(1.04);
-      border-color: var(--accent);
-    }
-
-    .item-icon {
-      font-size: 2.2rem;
-    }
-
-    .item-name {
-      font-size: 0.85rem;
-      font-weight: bold;
-    }
-
-    .item-price {
-      font-size: 0.8rem;
-      color: var(--accent);
-      font-weight: 800;
-    }
-
-    .item-badge {
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      background: var(--accent);
-      color: white;
-      font-size: 0.7rem;
-      font-weight: bold;
-      padding: 2px 8px;
+      padding: 10px 20px;
       border-radius: 10px;
-    }
-
-    #sync-indicator {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      font-size: 0.8rem;
+      cursor: pointer;
       font-weight: bold;
-      padding: 6px 14px;
+    }
+
+    #kiss-request-modal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.85);
+      border: 2px solid #ff6b81;
       border-radius: 20px;
-      background: rgba(0,0,0,0.75);
+      padding: 20px 30px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      z-index: 50;
+      box-shadow: 0 0 15px rgba(255, 107, 129, 0.5);
       color: white;
-      pointer-events: none;
-      z-index: 100;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      backdrop-filter: blur(4px);
     }
 
-    #sync-indicator.active {
-      opacity: 1;
+    #kiss-request-modal span {
+      font-size: 18px;
+      font-weight: bold;
     }
 
-    #minigame-canvas {
-      width: 100%;
-      height: 100%;
-      background: var(--bg-secondary);
-      display: block;
+    .kiss-request-buttons {
+      display: flex;
+      gap: 15px;
+    }
+
+    .kiss-request-buttons button {
+      background: #ff4757;
+      border: none;
+      font-size: 20px;
+      padding: 10px 20px;
       border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.1s;
     }
 
-    @media (min-width: 600px) {
-      .modal-overlay {
-        align-items: center;
-      }
-      .modal-card {
-        border-radius: var(--radius);
-        max-height: 80%;
-      }
+    .kiss-request-buttons button:active {
+      transform: scale(0.9);
     }
   </style>
 </head>
 <body>
 
-  <div id="sync-indicator">Sincronizando...</div>
+  <div id="role-modal">
+    <button class="role-btn role-btn-boy" id="btn-boy">👦 Teuzin</button>
+    <button class="role-btn role-btn-girl" id="btn-girl">👧 Daily</button>
+  </div>
 
-  <div id="app">
-    <div id="screen-loading" class="screen active">
-      <div class="spinner"></div>
-      <p id="loading-text" style="font-weight: bold; font-size: 1.1rem;">Iniciando Deluxe Engine...</p>
+  <div id="loading-modal">
+    <h3>Aguarde...</h3>
+    <div class="progress-bar-container">
+      <div class="progress-bar" id="loading-progress"></div>
     </div>
+  </div>
 
-    <div id="screen-login" class="screen">
-      <div class="login-card">
-        <h1 style="color: var(--accent); font-size: 2rem;">My Virtual Pet</h1>
-        <p style="opacity: 0.8; font-size: 0.95rem;">Deluxe Realtime Edition</p>
-        <button id="btn-google-login" class="btn">
-          <svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M12.24 10.285V13.4h6.887c-.58 2.307-2.73 4.028-5.222 4.028a6.38 6.38 0 0 1-6.38-6.38a6.38 6.38 0 0 1 6.38-6.38c1.39 0 2.657.52 3.62 1.383l2.36-2.36A9.95 9.95 0 0 0 12.24 2C6.58 2 2 6.58 2 12.24s4.58 10.24 10.24 10.24c6.12 0 10.15-4.3 10.15-10.33c0-.7-.07-1.38-.18-2.015H12.24z"/></svg>
-          Entrar com Google
-        </button>
-      </div>
+  <div id="top-bar">
+    <button class="nav-arrow" id="prev-room-btn">◀</button>
+    <div id="room-title">Sala</div>
+    <div id="top-right-controls">
+      <button class="icon-btn" id="audio-control">🎵</button>
+      <button class="icon-btn" id="settings-btn">⚙️</button>
     </div>
+    <button class="nav-arrow" id="next-room-btn">▶</button>
+  </div>
 
-    <div id="screen-creation" class="screen">
-      <div class="creation-container">
-        <h2 style="text-align: center; color: var(--accent);">Adote Seu Pet Deluxe</h2>
-        <div class="form-group">
-          <label>Nome do Pet</label>
-          <input type="text" id="create-name" placeholder="Ex: Bob" maxlength="12">
-        </div>
-        <div class="form-group">
-          <label>Espécie</label>
-          <select id="create-species">
-            <option value="cachorro">Cachorro 🐶</option>
-            <option value="gato">Gato 🐱</option>
-            <option value="coelho">Coelho 🐰</option>
-            <option value="hamster">Hamster 🐹</option>
-            <option value="raposa">Raposa 🦊</option>
-            <option value="panda">Panda 🐼</option>
-            <option value="sapo">Sapo 🐸</option>
-            <option value="dragao">Dragão 🐲</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Cor Principal</label>
-          <input type="color" id="create-color" value="#ff7675">
-        </div>
-        <div class="form-group">
-          <label>Personalidade</label>
-          <select id="create-personality">
-            <option value="alegre">Alegre (+Felicidade)</option>
-            <option value="preguicoso">Preguiçoso (+Energia)</option>
-            <option value="carinhoso">Carinhoso (+Afeto)</option>
-            <option value="curioso">Curioso (+XP extra)</option>
-            <option value="glutao">Glutão (+Fome)</option>
-          </select>
-        </div>
-        <button id="btn-finish-creation" class="btn" style="margin-top: 10px;">Adotar Agora ❤️</button>
+  <div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+  </div>
+
+  <div id="chat-container">
+    <input type="text" id="chat-input" placeholder="Digite uma mensagem..." maxlength="40">
+    <button class="action-btn" id="kiss-btn">😘</button>
+  </div>
+
+  <div id="settings-modal">
+    <div class="settings-card">
+      <div class="settings-header">
+        <h3>Configurações</h3>
+        <button class="close-btn" id="close-settings-btn">✖</button>
       </div>
-    </div>
-
-    <div id="screen-game" class="screen">
-      <header>
-        <div class="pet-info">
-          <span class="pet-name-title" id="ui-pet-name">Pet</span>
-          <span class="level-badge" id="ui-pet-level">Nível 1</span>
-        </div>
-        <div class="currencies">
-          <div class="currency-item">🪙 <span id="ui-coins">0</span></div>
-          <div class="currency-item">💎 <span id="ui-gems">0</span></div>
-        </div>
-      </header>
-
-      <div class="status-container">
-        <div class="status-bar-wrap">
-          <div class="status-label"><span>🍖 Fome</span><span id="txt-hunger">100%</span></div>
-          <div class="status-track"><div id="bar-hunger" class="status-fill"></div></div>
-        </div>
-        <div class="status-bar-wrap">
-          <div class="status-label"><span>💧 Sede</span><span id="txt-thirst">100%</span></div>
-          <div class="status-track"><div id="bar-thirst" class="status-fill"></div></div>
-        </div>
-        <div class="status-bar-wrap">
-          <div class="status-label"><span>🧼 Higiene</span><span id="txt-hygiene">100%</span></div>
-          <div class="status-track"><div id="bar-hygiene" class="status-fill"></div></div>
-        </div>
-        <div class="status-bar-wrap">
-          <div class="status-label"><span>⚡ Energia</span><span id="txt-energy">100%</span></div>
-          <div class="status-track"><div id="bar-energy" class="status-fill"></div></div>
-        </div>
-        <div class="status-bar-wrap">
-          <div class="status-label"><span>❤️ Felicidade</span><span id="txt-happiness">100%</span></div>
-          <div class="status-track"><div id="bar-happiness" class="status-fill"></div></div>
-        </div>
-        <div class="status-bar-wrap">
-          <div class="status-label"><span>💊 Saúde</span><span id="txt-health">100%</span></div>
-          <div class="status-track"><div id="bar-health" class="status-fill"></div></div>
+      <div class="settings-tabs">
+        <button class="tab-btn active" data-tab="tab-player">Perfil</button>
+        <button class="tab-btn" data-tab="tab-audio">Áudio</button>
+        <button class="tab-btn" data-tab="tab-effects">Efeitos</button>
+      </div>
+      <div class="tab-content active" id="tab-player">
+        <div class="setting-item">
+          <span>Trocar Personagem</span>
+          <button class="role-btn role-btn-boy" id="switch-role-btn" style="width: auto; padding: 8px 15px; font-size: 14px;">Alternar 👦/👧</button>
         </div>
       </div>
-
-      <div class="game-viewport" id="viewport">
-        <div class="speech-bubble" id="speech-bubble">Olá Teuzin!</div>
-        
-        <div class="pet-stage" id="pet-stage">
-          <div class="pet-avatar anim-idle" id="pet-avatar"></div>
+      <div class="tab-content" id="tab-audio">
+        <div class="setting-item">
+          <span>Música de Fundo</span>
+          <input type="checkbox" class="toggle-switch" id="toggle-bgm">
+        </div>
+        <div class="setting-item">
+          <span>Efeitos Sonoros</span>
+          <input type="checkbox" class="toggle-switch" id="toggle-sfx" checked>
         </div>
       </div>
-
-      <div class="action-bar">
-        <button class="action-btn" onclick="UI.openModal('modal-feed')">
-          <span class="action-icon">🍎</span>Alimentar
-        </button>
-        <button class="action-btn" onclick="Game.actions.wash()">
-          <span class="action-icon">🧼</span>Banho
-        </button>
-        <button class="action-btn" onclick="Game.actions.sleep()">
-          <span class="action-icon">🌙</span>Dormir
-        </button>
-        <button class="action-btn" onclick="UI.openModal('modal-shop')">
-          <span class="action-icon">🛍️</span>Loja
-        </button>
-        <button class="action-btn" onclick="UI.openModal('modal-minigames')">
-          <span class="action-icon">🎮</span>Jogos
-        </button>
-        <button class="action-btn" onclick="UI.openModal('modal-more')">
-          <span class="action-icon">⚙️</span>Mais
-        </button>
+      <div class="tab-content" id="tab-effects">
+        <div class="setting-item">
+          <span>Sons de Clique</span>
+          <input type="checkbox" class="toggle-switch" id="toggle-clicks" checked>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="modal-overlay" id="modal-feed">
-    <div class="modal-card">
-      <div class="modal-header">
-        <span class="modal-title">Alimentar & Dessedentar</span>
-        <button class="modal-close" onclick="UI.closeModals()">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="grid-list" id="list-inventory-food"></div>
-      </div>
+  <div id="photo-modal">
+    <img id="modal-img" src="photo.png" alt="Recordação">
+    <button id="close-photo">✖️</button>
+  </div>
+
+  <div id="kiss-request-modal">
+    <span>Aceitar 😘 ?</span>
+    <div class="kiss-request-buttons">
+      <button id="accept-kiss-btn">👍</button>
+      <button id="reject-kiss-btn">👎</button>
     </div>
   </div>
 
-  <div class="modal-overlay" id="modal-shop">
-    <div class="modal-card">
-      <div class="modal-header">
-        <span class="modal-title">Loja Virtual Deluxe</span>
-        <button class="modal-close" onclick="UI.closeModals()">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="grid-list" id="list-shop"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="modal-minigames">
-    <div class="modal-card">
-      <div class="modal-header">
-        <span class="modal-title">Minijogos</span>
-        <button class="modal-close" onclick="UI.closeModals()">✕</button>
-      </div>
-      <div class="modal-body">
-        <button class="btn" onclick="Minigames.startMemory()">🧠 Jogo da Memória</button>
-        <button class="btn" style="margin-top:10px;" onclick="Minigames.startCatcher()">🍎 Pegar Comida</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="modal-minigame-exec">
-    <div class="modal-card" style="height: 90%; max-height: 90%;">
-      <div class="modal-header">
-        <span class="modal-title" id="minigame-title">Minijogo</span>
-        <button class="modal-close" onclick="Minigames.stop()">✕</button>
-      </div>
-      <div class="modal-body" id="minigame-container" style="padding:0; overflow:hidden;">
-        <canvas id="minigame-canvas"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="modal-more">
-    <div class="modal-card">
-      <div class="modal-header">
-        <span class="modal-title">Opções e Estatísticas</span>
-        <button class="modal-close" onclick="UI.closeModals()">✕</button>
-      </div>
-      <div class="modal-body">
-        <h3>Tema Visual</h3>
-        <select id="setting-theme" onchange="UI.setTheme(this.value)" style="padding:10px; border-radius:10px; width:100%;">
-          <option value="default">Padrão Menta</option>
-          <option value="dark">Escuro Deluxe</option>
-          <option value="cozy">Aconchegante</option>
-          <option value="cyberpunk">Cyberpunk</option>
-        </select>
-        <hr style="margin: 10px 0; border: none; border-top: 1px solid rgba(0,0,0,0.1);">
-        <h3>Estatísticas</h3>
-        <p id="stats-summary" style="font-size:0.9rem; line-height:1.6;"></p>
-        <hr style="margin: 10px 0; border: none; border-top: 1px solid rgba(0,0,0,0.1);">
-        <button class="btn btn-secondary" onclick="Sound.toggle()" style="width:100%;">🔊 Alternar Som</button>
-        <button class="btn btn-secondary" onclick="SaveManager.exportSave()" style="margin-top:8px; width:100%;">💾 Exportar Save</button>
-        <button class="btn" style="background-color: var(--danger); margin-top:12px; width:100%;" onclick="Auth.logout()">Sair da Conta</button>
-      </div>
-    </div>
-  </div>
+  <audio id="bg-music" loop src="music.mp3"></audio>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics.js";
+    import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBqRAsWfP4w-r82PZOaJcDck7W8Aeph3p8",
@@ -813,656 +531,501 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+    const analytics = getAnalytics(app);
     const db = getDatabase(app);
-    const provider = new GoogleAuthProvider();
 
-    window.Sound = {
-      ctx: null,
-      enabled: true,
-      init() {
-        if (!this.ctx) {
-          const AudioCtx = window.AudioContext || window.webkitAudioContext;
-          if (AudioCtx) this.ctx = new AudioCtx();
-        }
-      },
-      playTone(freq, type = 'sine', duration = 0.1) {
-        if (!this.enabled) return;
-        this.init();
-        if (!this.ctx) return;
-        try {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = type;
-          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-          gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start();
-          osc.stop(this.ctx.currentTime + duration);
-        } catch (e) {}
-      },
-      click() { this.playTone(450, 'sine', 0.05); },
-      success() { this.playTone(650, 'triangle', 0.15); },
-      buy() { this.playTone(850, 'square', 0.1); },
-      toggle() { this.enabled = !this.enabled; }
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let myRole = localStorage.getItem('saved_role') || null;
+    let roomKeys = ['wall1', 'wall2', 'wall3', 'wall4', 'wall5'];
+    let roomNames = {
+      wall1: 'Sala',
+      wall2: 'Quarto',
+      wall3: 'Cozinha',
+      wall4: 'Banheiro',
+      wall5: 'Rua'
+    };
+    let currentRoomIndex = 0;
+    let currentRoom = roomKeys[currentRoomIndex];
+    let isDragging = false;
+    let lastSaveTime = 0;
+
+    let activeKissEffect = false;
+    let kissEffectEndTime = 0;
+
+    let settings = {
+      bgm: false,
+      sfx: true,
+      clicks: true
     };
 
-    const DEFAULT_SAVE = {
-      saveVersion: 2,
-      profile: { createdAt: Date.now(), lastLogin: Date.now() },
-      pet: {
-        name: "Pet",
-        species: "cachorro",
-        color: "#ff7675",
-        personality: "alegre",
-        level: 1,
-        xp: 0,
-        created: false
-      },
-      needs: {
-        hunger: 100,
-        thirst: 100,
-        hygiene: 100,
-        energy: 100,
-        happiness: 100,
-        health: 100,
-        lastUpdated: Date.now()
-      },
-      economy: { coins: 150, gems: 15 },
-      inventory: {
-        food_apple: 5,
-        food_water: 5,
-        food_burger: 2,
-        food_juice: 2
-      },
-      statistics: {
-        mealsGiven: 0,
-        bathsGiven: 0,
-        minigamesPlayed: 0
-      },
-      settings: { theme: 'default' }
-    };
-
-    window.ITEMS = {
-      food_apple: { id: 'food_apple', name: 'Maçã', type: 'food', icon: '🍎', price: 10, fillHunger: 25 },
-      food_burger: { id: 'food_burger', name: 'Hambúrguer', type: 'food', icon: '🍔', price: 30, fillHunger: 60 },
-      food_pizza: { id: 'food_pizza', name: 'Pizza', type: 'food', icon: '🍕', price: 40, fillHunger: 75 },
-      food_water: { id: 'food_water', name: 'Água', type: 'drink', icon: '💧', price: 5, fillThirst: 35 },
-      food_juice: { id: 'food_juice', name: 'Suco', type: 'drink', icon: '🧃', price: 15, fillThirst: 55 },
-      food_boba: { id: 'food_boba', name: 'Boba Tea', type: 'drink', icon: '🧋', price: 25, fillThirst: 80 },
-      item_medicine: { id: 'item_medicine', name: 'Remédio', type: 'cure', icon: '💊', price: 50, fillHealth: 50 }
-    };
-
-    window.GameState = null;
-    window.CurrentUser = null;
-    let realtimeUnsubscribe = null;
-
-    window.SaveManager = {
-      debounceTimer: null,
-      isLocalChange: false,
-      
-      showIndicator(msg, duration = 1500) {
-        const ind = document.getElementById('sync-indicator');
-        ind.innerText = msg;
-        ind.classList.add('active');
-        setTimeout(() => ind.classList.remove('active'), duration);
-      },
-
-      initRealtimeListener(uid) {
-        if (realtimeUnsubscribe) realtimeUnsubscribe();
-
-        const userRef = ref(db, `virtualPet/users/${uid}`);
-        realtimeUnsubscribe = onValue(userRef, (snapshot) => {
-          if (this.isLocalChange) {
-            this.isLocalChange = false;
-            return;
-          }
-
-          if (snapshot.exists()) {
-            window.GameState = snapshot.val();
-          } else {
-            window.GameState = JSON.parse(JSON.stringify(DEFAULT_SAVE));
-            this.saveGame(true);
-          }
-
-          this.calculateOfflineProgression();
-
-          if (!window.GameState.pet.created) {
-            UI.showScreen('screen-creation');
-          } else {
-            UI.showScreen('screen-game');
-            Game.renderPet();
-            UI.renderBars();
-            UI.setTheme(window.GameState.settings.theme || 'default');
-          }
-        });
-      },
-
-      calculateOfflineProgression() {
-        if (!window.GameState || !window.GameState.needs) return;
-        const now = Date.now();
-        const last = window.GameState.needs.lastUpdated || now;
-        const diffMinutes = Math.floor((now - last) / (1000 * 60));
-
-        if (diffMinutes > 0) {
-          const needs = window.GameState.needs;
-          needs.hunger = Math.max(0, needs.hunger - diffMinutes * 0.12);
-          needs.thirst = Math.max(0, needs.thirst - diffMinutes * 0.18);
-          needs.hygiene = Math.max(0, needs.hygiene - diffMinutes * 0.08);
-          needs.energy = Math.max(0, needs.energy - diffMinutes * 0.1);
-          needs.happiness = Math.max(0, needs.happiness - diffMinutes * 0.12);
-          needs.lastUpdated = now;
-        }
-      },
-
-      saveGame(immediate = false) {
-        if (!window.CurrentUser || !window.GameState) return;
-
-        window.GameState.needs.lastUpdated = Date.now();
-        
-        const doSave = async () => {
-          this.showIndicator("Sincronizando...");
-          try {
-            this.isLocalChange = true;
-            const userRef = ref(db, `virtualPet/users/${window.CurrentUser.uid}`);
-            await set(userRef, window.GameState);
-            this.showIndicator("Salvo no Firebase!");
-          } catch (e) {
-            this.isLocalChange = false;
-            this.showIndicator("Erro de Sincronização");
-          }
-        };
-
-        if (immediate) {
-          clearTimeout(this.debounceTimer);
-          doSave();
-        } else {
-          clearTimeout(this.debounceTimer);
-          this.debounceTimer = setTimeout(doSave, 1500);
-        }
-      },
-
-      exportSave() {
-        const str = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.GameState));
-        const anchor = document.createElement('a');
-        anchor.setAttribute("href", str);
-        anchor.setAttribute("download", `pet_save_deluxe_${Date.now()}.json`);
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playClickSound() {
+      if (!settings.clicks) return;
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
       }
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.05);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.05);
+    }
+
+    const roleNames = {
+      boy: 'Teuzin',
+      girl: 'Daily'
     };
 
-    window.Auth = {
-      init() {
-        onAuthStateChanged(auth, (user) => {
-          if (user) {
-            window.CurrentUser = user;
-            UI.showLoading("Carregando Dados em Tempo Real...");
-            SaveManager.initRealtimeListener(user.uid);
-          } else {
-            window.CurrentUser = null;
-            if (realtimeUnsubscribe) realtimeUnsubscribe();
-            UI.showScreen('screen-login');
-          }
-        });
-
-        document.getElementById('btn-google-login').onclick = () => {
-          signInWithPopup(auth, provider).catch(err => alert("Erro ao autenticar: " + err.message));
-        };
-      },
-      logout() {
-        signOut(auth).then(() => {
-          window.location.reload();
-        });
-      }
+    const players = {
+      boy: { x: 30, y: 50, room: 'wall1', msg: '', msgTime: 0 },
+      girl: { x: 70, y: 50, room: 'wall1', msg: '', msgTime: 0 }
     };
 
-    window.UI = {
-      showScreen(screenId) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(screenId).classList.add('active');
-      },
-      showLoading(msg) {
-        document.getElementById('loading-text').innerText = msg;
-        this.showScreen('screen-loading');
-      },
-      openModal(modalId) {
-        Sound.click();
-        this.updateModalsContent();
-        document.getElementById(modalId).classList.add('active');
-      },
-      closeModals() {
-        document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
-      },
-      setTheme(theme) {
-        document.body.setAttribute('data-theme', theme);
-        const sel = document.getElementById('setting-theme');
-        if (sel) sel.value = theme;
-        if (window.GameState) {
-          window.GameState.settings.theme = theme;
-          SaveManager.saveGame();
-        }
-      },
-      speak(text) {
-        const bubble = document.getElementById('speech-bubble');
-        bubble.innerText = text;
-        bubble.classList.add('active');
-        setTimeout(() => bubble.classList.remove('active'), 2800);
-      },
-      addXP(amount) {
-        if (!window.GameState) return;
-        const pet = window.GameState.pet;
-        pet.xp += amount;
-        const requiredXP = pet.level * 100;
-        if (pet.xp >= requiredXP) {
-          pet.level++;
-          pet.xp -= requiredXP;
-          window.GameState.economy.coins += 50;
-          window.GameState.economy.gems += 5;
-          Sound.success();
-          this.speak(`Nível UP! Teuzin, alcancei o Nível ${pet.level}! 🎉`);
-        }
-      },
-      updateModalsContent() {
-        if (!window.GameState) return;
-
-        const invContainer = document.getElementById('list-inventory-food');
-        invContainer.innerHTML = '';
-        let hasItems = false;
-
-        Object.keys(window.GameState.inventory || {}).forEach(itemId => {
-          const count = window.GameState.inventory[itemId];
-          const item = window.ITEMS[itemId];
-          if (count > 0 && item) {
-            hasItems = true;
-            const card = document.createElement('div');
-            card.className = 'item-card';
-            card.innerHTML = `
-              <span class="item-badge">x${count}</span>
-              <div class="item-icon">${item.icon}</div>
-              <div class="item-name">${item.name}</div>
-            `;
-            card.onclick = () => {
-              Game.actions.useItem(itemId);
-              UI.closeModals();
-            };
-            invContainer.appendChild(card);
-          }
-        });
-
-        if (!hasItems) {
-          invContainer.innerHTML = '<p style="grid-column: 1/-1; text-align:center; opacity:0.6;">Sua mochila está vazia. Compre algo na loja!</p>';
-        }
-
-        const shopContainer = document.getElementById('list-shop');
-        shopContainer.innerHTML = '';
-        Object.keys(window.ITEMS).forEach(itemId => {
-          const item = window.ITEMS[itemId];
-          const card = document.createElement('div');
-          card.className = 'item-card';
-          card.innerHTML = `
-            <div class="item-icon">${item.icon}</div>
-            <div class="item-name">${item.name}</div>
-            <div class="item-price">🪙 ${item.price}</div>
-          `;
-          card.onclick = () => Game.actions.buyItem(itemId);
-          shopContainer.appendChild(card);
-        });
-
-        const stats = window.GameState.statistics || {};
-        document.getElementById('stats-summary').innerHTML = `
-          Refeições oferecidas: <b>${stats.mealsGiven || 0}</b><br>
-          Banhos tomados: <b>${stats.bathsGiven || 0}</b><br>
-          Minijogos jogados: <b>${stats.minigamesPlayed || 0}</b>
-        `;
-      },
-      renderBars() {
-        if (!window.GameState) return;
-        const needs = window.GameState.needs;
-
-        const updateBar = (id, val) => {
-          const bounded = Math.max(0, Math.min(100, Math.round(val)));
-          const barEl = document.getElementById(`bar-${id}`);
-          const txtEl = document.getElementById(`txt-${id}`);
-          if (barEl) barEl.style.width = `${bounded}%`;
-          if (txtEl) txtEl.innerText = `${bounded}%`;
-
-          if (barEl) {
-            if (bounded < 25) barEl.style.backgroundColor = 'var(--danger)';
-            else if (bounded < 50) barEl.style.backgroundColor = 'var(--coin-color)';
-            else barEl.style.backgroundColor = 'var(--accent)';
-          }
-        };
-
-        updateBar('hunger', needs.hunger);
-        updateBar('thirst', needs.thirst);
-        updateBar('hygiene', needs.hygiene);
-        updateBar('energy', needs.energy);
-        updateBar('happiness', needs.happiness);
-        updateBar('health', needs.health);
-
-        document.getElementById('ui-pet-name').innerText = window.GameState.pet.name;
-        document.getElementById('ui-pet-level').innerText = `Nível ${window.GameState.pet.level}`;
-        document.getElementById('ui-coins').innerText = window.GameState.economy.coins;
-        document.getElementById('ui-gems').innerText = window.GameState.economy.gems;
-      }
+    const images = {
+      boy: new Image(),
+      girl: new Image(),
+      wall1: new Image(),
+      wall2: new Image(),
+      wall3: new Image(),
+      wall4: new Image(),
+      wall5: new Image(),
+      frame: new Image()
     };
 
-    window.PetRenderer = {
-      render(species, color) {
-        let ears = '';
-        let extraFeature = '';
+    images.boy.src = 'boy.png';
+    images.girl.src = 'girl.png';
+    images.wall1.src = 'wall1.png';
+    images.wall2.src = 'wall2.png';
+    images.wall3.src = 'wall3.png';
+    images.wall4.src = 'wall4.png';
+    images.wall5.src = 'wall5.png';
+    images.frame.src = 'frame.png';
 
-        switch(species) {
-          case 'gato':
-            ears = `<polygon points="25,35 15,10 40,25" fill="${color}" /><polygon points="75,35 85,10 60,25" fill="${color}" />`;
-            extraFeature = `<path d="M 20 55 L 5 50 M 20 58 L 5 58 M 20 61 L 5 66 M 80 55 L 95 50 M 80 58 L 95 58 M 80 61 L 95 66" stroke="#2d3436" stroke-width="1.5" />`;
-            break;
-          case 'coelho':
-            ears = `<ellipse cx="35" cy="20" rx="8" ry="22" fill="${color}" /><ellipse cx="65" cy="20" rx="8" ry="22" fill="${color}" />`;
-            break;
-          case 'raposa':
-            ears = `<polygon points="20,35 10,5 40,20" fill="${color}" /><polygon points="80,35 90,5 60,20" fill="${color}" />`;
-            extraFeature = `<polygon points="50,65 42,55 58,55" fill="#ffffff" />`;
-            break;
-          case 'panda':
-            ears = `<circle cx="25" cy="25" r="14" fill="#2d3436" /><circle cx="75" cy="25" r="14" fill="#2d3436" />`;
-            color = "#ffffff";
-            extraFeature = `<ellipse cx="38" cy="50" rx="7" ry="9" fill="#2d3436" /><ellipse cx="62" cy="50" rx="7" ry="9" fill="#2d3436" />`;
-            break;
-          case 'dragao':
-            ears = `<polygon points="20,25 5,15 25,40" fill="#e74c3c" /><polygon points="80,25 95,15 75,40" fill="#e74c3c" />`;
-            extraFeature = `<path d="M 40 20 L 50 10 L 60 20" fill="#f1c40f" />`;
-            break;
-          default:
-            ears = `<circle cx="25" cy="30" r="14" fill="${color}" /><circle cx="75" cy="30" r="14" fill="${color}" />`;
-            break;
-        }
+    const bgMusic = document.getElementById('bg-music');
 
-        return `
-          <svg class="pet-svg" viewBox="0 0 100 100">
-            <g>
-              ${ears}
-              <circle cx="50" cy="58" r="34" fill="${color}" stroke="#2d3436" stroke-width="1.5" />
-              ${extraFeature}
-              <circle cx="38" cy="50" r="4.5" fill="#2d3436" />
-              <circle cx="62" cy="50" r="4.5" fill="#2d3436" />
-              <circle cx="39.5" cy="48" r="1.8" fill="#ffffff" />
-              <circle cx="63.5" cy="48" r="1.8" fill="#ffffff" />
-              <ellipse cx="50" cy="59" rx="6" ry="4" fill="#ffffff" />
-              <polygon points="50,58 47,55 53,55" fill="#2d3436" />
-              <path d="M 46 61 Q 50 64 54 61" stroke="#2d3436" stroke-width="1.8" fill="none" stroke-linecap="round" />
-            </g>
-          </svg>
-        `;
-      }
-    };
+    function showLoading(callback) {
+      const loadingModal = document.getElementById('loading-modal');
+      const progressBar = document.getElementById('loading-progress');
+      loadingModal.style.display = 'flex';
+      progressBar.style.width = '0%';
 
-    window.Game = {
-      loopInterval: null,
-
-      start() {
-        UI.showScreen('screen-game');
-        this.renderPet();
-        UI.setTheme(window.GameState.settings.theme || 'default');
-        
-        document.getElementById('pet-stage').onclick = () => this.actions.petTouch();
-
-        clearInterval(this.loopInterval);
-        this.loopInterval = setInterval(() => this.tick(), 4000);
-        
-        UI.renderBars();
-        UI.speak("Que bom te ver, Teuzin!");
-      },
-
-      renderPet() {
-        if (!window.GameState || !window.GameState.pet) return;
-        const pet = window.GameState.pet;
-        const container = document.getElementById('pet-avatar');
-        if (container) {
-          container.innerHTML = PetRenderer.render(pet.species, pet.color);
-        }
-      },
-
-      tick() {
-        if (!window.GameState || !window.GameState.pet.created) return;
-        const needs = window.GameState.needs;
-
-        needs.hunger = Math.max(0, needs.hunger - 0.25);
-        needs.thirst = Math.max(0, needs.thirst - 0.35);
-        needs.hygiene = Math.max(0, needs.hygiene - 0.15);
-        needs.energy = Math.max(0, needs.energy - 0.18);
-        needs.happiness = Math.max(0, needs.happiness - 0.22);
-
-        if (needs.hunger < 20 || needs.hygiene < 20 || needs.thirst < 20) {
-          needs.health = Math.max(0, needs.health - 0.6);
-        } else if (needs.health < 100) {
-          needs.health = Math.min(100, needs.health + 0.3);
-        }
-
-        UI.renderBars();
-        SaveManager.saveGame();
-      },
-
-      actions: {
-        petTouch() {
-          Sound.success();
-          window.GameState.needs.happiness = Math.min(100, window.GameState.needs.happiness + 6);
-          UI.addXP(5);
-          UI.renderBars();
-          
-          const avatar = document.getElementById('pet-avatar');
-          avatar.classList.add('anim-happy');
-          setTimeout(() => avatar.classList.remove('anim-happy'), 1000);
-
-          const msgs = ["Hehe! ❤️", "Muito bom, Teuzin!", "Amo carinho!", "Você é demais!"];
-          UI.speak(msgs[Math.floor(Math.random() * msgs.length)]);
-          SaveManager.saveGame();
-        },
-
-        useItem(itemId) {
-          const item = window.ITEMS[itemId];
-          const inv = window.GameState.inventory;
-          if (inv[itemId] && inv[itemId] > 0) {
-            inv[itemId]--;
-            
-            if (item.fillHunger) window.GameState.needs.hunger = Math.min(100, window.GameState.needs.hunger + item.fillHunger);
-            if (item.fillThirst) window.GameState.needs.thirst = Math.min(100, window.GameState.needs.thirst + item.fillThirst);
-            if (item.fillHealth) window.GameState.needs.health = Math.min(100, window.GameState.needs.health + item.fillHealth);
-            
-            window.GameState.statistics.mealsGiven = (window.GameState.statistics.mealsGiven || 0) + 1;
-            UI.addXP(10);
-            
-            Sound.success();
-            UI.speak("Nham nham! Delícia!");
-            UI.renderBars();
-            SaveManager.saveGame(true);
-          }
-        },
-
-        buyItem(itemId) {
-          const item = window.ITEMS[itemId];
-          if (window.GameState.economy.coins >= item.price) {
-            window.GameState.economy.coins -= item.price;
-            window.GameState.inventory[itemId] = (window.GameState.inventory[itemId] || 0) + 1;
-            
-            Sound.buy();
-            UI.renderBars();
-            UI.updateModalsContent();
-            SaveManager.saveGame(true);
-          } else {
-            UI.speak("Moedas insuficientes!");
-          }
-        },
-
-        wash() {
-          window.GameState.needs.hygiene = 100;
-          window.GameState.statistics.bathsGiven = (window.GameState.statistics.bathsGiven || 0) + 1;
-          UI.addXP(8);
-          
-          const avatar = document.getElementById('pet-avatar');
-          avatar.classList.add('anim-wash');
-          setTimeout(() => avatar.classList.remove('anim-wash'), 1500);
-
-          Sound.success();
-          UI.speak("Tô muito limpinho e cheiroso! 🧼");
-          UI.renderBars();
-          SaveManager.saveGame(true);
-        },
-
-        sleep() {
-          window.GameState.needs.energy = 100;
-          UI.addXP(8);
-          Sound.click();
-          UI.speak("Zzz... Dormindo bem! 🌙");
-          UI.renderBars();
-          SaveManager.saveGame(true);
-        }
-      }
-    };
-
-    document.getElementById('btn-finish-creation').onclick = () => {
-      const name = document.getElementById('create-name').value.trim() || "Pet";
-      const species = document.getElementById('create-species').value;
-      const color = document.getElementById('create-color').value;
-      const personality = document.getElementById('create-personality').value;
-
-      window.GameState.pet = {
-        name,
-        species,
-        color,
-        personality,
-        level: 1,
-        xp: 0,
-        created: true
-      };
-
-      SaveManager.saveGame(true);
-      Game.start();
-    };
-
-    window.Minigames = {
-      active: false,
-      loopId: null,
-
-      startMemory() {
-        UI.closeModals();
-        UI.openModal('modal-minigame-exec');
-        document.getElementById('minigame-title').innerText = "Jogo da Memória";
-        
-        const container = document.getElementById('minigame-container');
-        container.innerHTML = `
-          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; padding:20px; width:100%; justify-items:center; align-items:center; height:100%;">
-            ${[1,1,2,2,3,3].sort(()=>Math.random()-0.5).map(v => `
-              <button class="btn btn-secondary" style="height:90px; width:100%; font-size:1.8rem;" onclick="Minigames.clickCard(this, ${v})">❓</button>
-            `).join('')}
-          </div>
-        `;
-        window.GameState.statistics.minigamesPlayed = (window.GameState.statistics.minigamesPlayed || 0) + 1;
-      },
-
-      cardState: [],
-      clickCard(btn, val) {
-        if (this.cardState.length >= 2 || btn.innerText !== '❓') return;
-
-        Sound.click();
-        btn.innerText = val === 1 ? '🍎' : val === 2 ? '⚽' : '⭐';
-        this.cardState.push({btn, val});
-
-        if (this.cardState.length === 2) {
-          if (this.cardState[0].val === this.cardState[1].val) {
-            Sound.success();
-            this.cardState = [];
-            window.GameState.economy.coins += 20;
-            UI.addXP(15);
-            UI.renderBars();
-            SaveManager.saveGame();
-          } else {
-            setTimeout(() => {
-              this.cardState.forEach(c => c.btn.innerText = '❓');
-              this.cardState = [];
-            }, 800);
-          }
-        }
-      },
-
-      startCatcher() {
-        UI.closeModals();
-        UI.openModal('modal-minigame-exec');
-        document.getElementById('minigame-title').innerText = "Pegar Comida";
-        
-        const canvas = document.getElementById('minigame-canvas');
-        const ctx = canvas.getContext('2d');
-        
+      setTimeout(() => progressBar.style.width = '40%', 100);
+      setTimeout(() => progressBar.style.width = '80%', 300);
+      setTimeout(() => {
+        progressBar.style.width = '100%';
         setTimeout(() => {
-          canvas.width = canvas.parentElement.clientWidth;
-          canvas.height = canvas.parentElement.clientHeight;
-        }, 100);
+          loadingModal.style.display = 'none';
+          if (callback) callback();
+        }, 200);
+      }, 500);
+    }
 
-        let playerX = canvas.width / 2 || 150;
-        let score = 0;
-        let food = { x: Math.random() * (canvas.width - 30) + 15, y: 0, speed: 3.5 };
+    function updateAudioState() {
+      if (settings.bgm) {
+        bgMusic.play().catch(() => {});
+        document.getElementById('audio-control').innerText = '🎵';
+      } else {
+        bgMusic.pause();
+        document.getElementById('audio-control').innerText = '🔇';
+      }
+      document.getElementById('toggle-bgm').checked = settings.bgm;
+    }
 
-        const touchHandler = (e) => {
-          const rect = canvas.getBoundingClientRect();
-          const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-          playerX = clientX - rect.left;
-        };
+    document.getElementById('audio-control').addEventListener('click', () => {
+      playClickSound();
+      settings.bgm = !settings.bgm;
+      updateAudioState();
+    });
 
-        canvas.ontouchstart = touchHandler;
-        canvas.ontouchmove = touchHandler;
-        canvas.onmousemove = touchHandler;
+    document.getElementById('toggle-bgm').addEventListener('change', (e) => {
+      playClickSound();
+      settings.bgm = e.target.checked;
+      updateAudioState();
+    });
 
-        this.active = true;
-        window.GameState.statistics.minigamesPlayed = (window.GameState.statistics.minigamesPlayed || 0) + 1;
+    document.getElementById('toggle-sfx').addEventListener('change', (e) => {
+      playClickSound();
+      settings.sfx = e.target.checked;
+    });
 
-        const loop = () => {
-          if (!this.active) return;
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
+    document.getElementById('toggle-clicks').addEventListener('change', (e) => {
+      settings.clicks = e.target.checked;
+      playClickSound();
+    });
 
-          food.y += food.speed;
-          ctx.font = "28px sans-serif";
-          ctx.fillText("🍎", food.x - 14, food.y);
+    document.getElementById('settings-btn').addEventListener('click', () => {
+      playClickSound();
+      document.getElementById('settings-modal').style.display = 'flex';
+    });
 
-          ctx.fillStyle = "#ff7675";
-          ctx.beginPath();
-          ctx.roundRect(playerX - 30, canvas.height - 35, 60, 16, 8);
-          ctx.fill();
+    document.getElementById('close-settings-btn').addEventListener('click', () => {
+      playClickSound();
+      document.getElementById('settings-modal').style.display = 'none';
+    });
 
-          if (food.y >= canvas.height - 35 && Math.abs(food.x - playerX) < 40) {
-            Sound.success();
-            score += 5;
-            window.GameState.economy.coins += 8;
-            UI.addXP(5);
-            UI.renderBars();
-            food = { x: Math.random() * (canvas.width - 40) + 20, y: 0, speed: 3.5 + score * 0.1 };
-          } else if (food.y > canvas.height) {
-            food = { x: Math.random() * (canvas.width - 40) + 20, y: 0, speed: 3.5 + score * 0.1 };
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        playClickSound();
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        e.target.classList.add('active');
+        document.getElementById(e.target.getAttribute('data-tab')).classList.add('active');
+      });
+    });
+
+    document.getElementById('switch-role-btn').addEventListener('click', () => {
+      playClickSound();
+      document.getElementById('settings-modal').style.display = 'none';
+      localStorage.removeItem('saved_role');
+      myRole = null;
+      document.getElementById('role-modal').style.display = 'flex';
+    });
+
+    function updateRoomDisplay() {
+      currentRoom = roomKeys[currentRoomIndex];
+      document.getElementById('room-title').innerText = roomNames[currentRoom];
+      if (myRole) {
+        players[myRole].room = currentRoom;
+        savePositionThrottled(true);
+      }
+      checkProximity();
+      render();
+    }
+
+    document.getElementById('prev-room-btn').addEventListener('click', () => {
+      playClickSound();
+      currentRoomIndex = (currentRoomIndex - 1 + roomKeys.length) % roomKeys.length;
+      updateRoomDisplay();
+    });
+
+    document.getElementById('next-room-btn').addEventListener('click', () => {
+      playClickSound();
+      currentRoomIndex = (currentRoomIndex + 1) % roomKeys.length;
+      updateRoomDisplay();
+    });
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      render();
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    function initGame() {
+      if (myRole) {
+        document.getElementById('role-modal').style.display = 'none';
+        showLoading(() => {
+          const myRef = ref(db, `teuzin_games/game_state/players/${myRole}`);
+          get(myRef).then((snapshot) => {
+            const data = snapshot.val();
+            if (data && data.room) {
+              currentRoom = data.room;
+              currentRoomIndex = roomKeys.indexOf(currentRoom);
+              if (currentRoomIndex === -1) currentRoomIndex = 0;
+              document.getElementById('room-title').innerText = roomNames[currentRoom];
+            }
+            
+            const playersRef = ref(db, 'teuzin_games/game_state/players');
+            onValue(playersRef, (snapshot) => {
+              const data = snapshot.val();
+              if (data) {
+                if (data.boy) players.boy = data.boy;
+                if (data.girl) players.girl = data.girl;
+                checkProximity();
+                render();
+              }
+            });
+          });
+
+          const kissRequestRef = ref(db, 'teuzin_games/game_state/kiss_request');
+          onValue(kissRequestRef, (snapshot) => {
+            const data = snapshot.val();
+            const kissModal = document.getElementById('kiss-request-modal');
+            if (data && data.status === 'pending') {
+              if (data.from !== myRole) {
+                kissModal.style.display = 'flex';
+              } else {
+                kissModal.style.display = 'none';
+              }
+            } else {
+              kissModal.style.display = 'none';
+            }
+          });
+
+          const kissEventRef = ref(db, 'teuzin_games/game_state/kiss_event');
+          onValue(kissEventRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data && Date.now() - data.time < 3000) {
+              if (data.status === 'accepted') {
+                triggerKissAction();
+              } else if (data.status === 'rejected') {
+                if (data.from === myRole) {
+                  const partnerRole = myRole === 'boy' ? 'girl' : 'boy';
+                  const partnerName = roleNames[partnerRole];
+                  players[myRole].msg = `${partnerName} Recusou 💔`;
+                  players[myRole].msgTime = Date.now();
+                  savePositionThrottled(true);
+                }
+              }
+            }
+          });
+
+          resizeCanvas();
+        });
+      } else {
+        document.getElementById('role-modal').style.display = 'flex';
+      }
+    }
+
+    function selectRole(role) {
+      playClickSound();
+      myRole = role;
+      localStorage.setItem('saved_role', role);
+      initGame();
+    }
+
+    document.getElementById('btn-boy').addEventListener('click', () => selectRole('boy'));
+    document.getElementById('btn-girl').addEventListener('click', () => selectRole('girl'));
+
+    function checkProximity() {
+      const kissBtn = document.getElementById('kiss-btn');
+      if (players.boy.room === currentRoom && players.girl.room === currentRoom) {
+        const dist = Math.hypot(players.boy.x - players.girl.x, players.boy.y - players.girl.y);
+        if (dist < 20) {
+          kissBtn.style.display = 'block';
+          return;
+        }
+      }
+      kissBtn.style.display = 'none';
+    }
+
+    document.getElementById('kiss-btn').addEventListener('click', () => {
+      playClickSound();
+      if (!myRole) return;
+      set(ref(db, 'teuzin_games/game_state/kiss_request'), {
+        from: myRole,
+        status: 'pending',
+        time: Date.now()
+      });
+    });
+
+    document.getElementById('accept-kiss-btn').addEventListener('click', () => {
+      playClickSound();
+      set(ref(db, 'teuzin_games/game_state/kiss_request'), null);
+      set(ref(db, 'teuzin_games/game_state/kiss_event'), {
+        status: 'accepted',
+        time: Date.now()
+      });
+    });
+
+    document.getElementById('reject-kiss-btn').addEventListener('click', () => {
+      playClickSound();
+      const kissRequestRef = ref(db, 'teuzin_games/game_state/kiss_request');
+      onValue(kissRequestRef, (snapshot) => {
+        const data = snapshot.val();
+        const requester = data ? data.from : (myRole === 'boy' ? 'girl' : 'boy');
+        set(ref(db, 'teuzin_games/game_state/kiss_request'), null);
+        set(ref(db, 'teuzin_games/game_state/kiss_event'), {
+          status: 'rejected',
+          from: requester,
+          time: Date.now()
+        });
+      }, { onlyOnce: true });
+    });
+
+    function triggerKissAction() {
+      activeKissEffect = true;
+      kissEffectEndTime = Date.now() + 2000;
+      animateKiss();
+    }
+
+    function animateKiss() {
+      if (Date.now() < kissEffectEndTime) {
+        render();
+        requestAnimationFrame(animateKiss);
+      } else {
+        activeKissEffect = false;
+        render();
+      }
+    }
+
+    function renderSpeechBubble(x, y, text) {
+      ctx.font = '14px Arial';
+      const textWidth = ctx.measureText(text).width;
+      const padding = 10;
+      const bubbleWidth = textWidth + padding * 2;
+      const bubbleHeight = 30;
+      const bubbleX = x - bubbleWidth / 2;
+      const bubbleY = y - 25;
+
+      ctx.fillStyle = 'white';
+      ctx.beginPath();
+      ctx.roundRect(bubbleX, bubbleY, bubbleWidth, bubbleHeight, 10);
+      ctx.fill();
+
+      ctx.fillStyle = 'black';
+      ctx.textAlign = 'center';
+      ctx.fillText(text, x, bubbleY + 20);
+      ctx.textAlign = 'left';
+    }
+
+    function renderHeadEmoji(x, y) {
+      ctx.font = '30px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('👩‍❤️‍💋‍👨', x, y - 10);
+      ctx.textAlign = 'left';
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const bgImg = images[currentRoom];
+      if (bgImg.complete && bgImg.naturalWidth !== 0) {
+        ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+      } else {
+        ctx.fillStyle = "#2c3e50";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      if (currentRoom === 'wall1' && images.frame.complete && images.frame.naturalWidth !== 0) {
+        ctx.drawImage(images.frame, canvas.width * 0.45, canvas.height * 0.2, 80, 80);
+      }
+
+      const charHeight = canvas.height * 0.25;
+      const charWidth = charHeight * 0.6;
+
+      ['boy', 'girl'].forEach(role => {
+        const p = players[role];
+        if (p.room === currentRoom) {
+          const xPx = (p.x / 100) * canvas.width - (charWidth / 2);
+          const yPx = (p.y / 100) * canvas.height - (charHeight / 2);
+
+          const img = images[role];
+          if (img.complete && img.naturalWidth !== 0) {
+            ctx.drawImage(img, xPx, yPx, charWidth, charHeight);
+          } else {
+            ctx.fillStyle = role === 'boy' ? '#2ed573' : '#ff6b81';
+            ctx.fillRect(xPx, yPx, charWidth, charHeight);
           }
 
-          ctx.fillStyle = "var(--text-main)";
-          ctx.font = "bold 16px sans-serif";
-          ctx.fillText(`Moedas: +${score}`, 15, 30);
+          if (activeKissEffect && Date.now() < kissEffectEndTime) {
+            renderHeadEmoji((p.x / 100) * canvas.width, yPx);
+          }
 
-          this.loopId = requestAnimationFrame(loop);
-        };
-        loop();
-      },
+          if (p.msg && Date.now() - p.msgTime < 5000) {
+            renderSpeechBubble((p.x / 100) * canvas.width, yPx, p.msg);
+          }
+        }
+      });
+    }
 
-      stop() {
-        this.active = false;
-        if (this.loopId) cancelAnimationFrame(this.loopId);
-        UI.closeModals();
-        SaveManager.saveGame(true);
+    Object.values(images).forEach(img => img.onload = render);
+
+    function sendMessage() {
+      playClickSound();
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (text && myRole) {
+        players[myRole].msg = text;
+        players[myRole].msgTime = Date.now();
+        input.value = '';
+        savePositionThrottled(true);
+        render();
       }
-    };
+    }
 
-    window.addEventListener('load', () => {
-      Auth.init();
+    document.getElementById('chat-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
     });
+
+    function getCoordinates(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+      return {
+        xPct: ((clientX - rect.left) / canvas.width) * 100,
+        yPct: ((clientY - rect.top) / canvas.height) * 100
+      };
+    }
+
+    function startDrag(e) {
+      if (!myRole) return;
+      const coords = getCoordinates(e);
+      const myP = players[myRole];
+
+      if (currentRoom === 'wall1') {
+        const frameX = 45;
+        const frameY = 20;
+        if (Math.abs(coords.xPct - frameX) < 5 && Math.abs(coords.yPct - frameY) < 5) {
+          playClickSound();
+          document.getElementById('photo-modal').style.display = 'flex';
+          return;
+        }
+      }
+
+      if (myP.room === currentRoom) {
+        const dist = Math.hypot(coords.xPct - myP.x, coords.yPct - myP.y);
+        if (dist < 12) {
+          isDragging = true;
+        }
+      }
+    }
+
+    function moveDrag(e) {
+      if (!isDragging || !myRole) return;
+      e.preventDefault();
+      const coords = getCoordinates(e);
+
+      players[myRole].x = Math.max(5, Math.min(95, coords.xPct));
+      players[myRole].y = Math.max(5, Math.min(95, coords.yPct));
+
+      checkProximity();
+      render();
+      savePositionThrottled();
+    }
+
+    function stopDrag() {
+      isDragging = false;
+    }
+
+    canvas.addEventListener('mousedown', startDrag);
+    window.addEventListener('mousemove', moveDrag);
+    window.addEventListener('mouseup', stopDrag);
+
+    canvas.addEventListener('touchstart', startDrag, { passive: false });
+    window.addEventListener('touchmove', moveDrag, { passive: false });
+    window.addEventListener('touchend', stopDrag);
+
+    document.getElementById('close-photo').addEventListener('click', () => {
+      playClickSound();
+      document.getElementById('photo-modal').style.display = 'none';
+    });
+
+    function savePositionThrottled(force = false) {
+      const now = Date.now();
+      if (force || now - lastSaveTime > 50) {
+        if (!myRole) return;
+        set(ref(db, `teuzin_games/game_state/players/${myRole}`), {
+          x: players[myRole].x,
+          y: players[myRole].y,
+          room: players[myRole].room,
+          msg: players[myRole].msg || '',
+          msgTime: players[myRole].msgTime || 0
+        });
+        lastSaveTime = now;
+      }
+    }
+
+    initGame();
   </script>
 </body>
 </html>
