@@ -774,6 +774,14 @@
         players[fromRole].reactionTime = now;
         players[targetRole].reactionEmoji = map[action].target;
         players[targetRole].reactionTime = now;
+
+        if (myRole) {
+          set(ref(db, `teuzin_games/game_state/players/${fromRole}/reactionEmoji`), map[action].from);
+          set(ref(db, `teuzin_games/game_state/players/${fromRole}/reactionTime`), now);
+          set(ref(db, `teuzin_games/game_state/players/${targetRole}/reactionEmoji`), map[action].target);
+          set(ref(db, `teuzin_games/game_state/players/${targetRole}/reactionTime`), now);
+        }
+
         render();
       }
     }
@@ -847,7 +855,7 @@
           ctx.restore();
 
           if (p.reactionEmoji && Date.now() - p.reactionTime < 3000) {
-            renderHeadEmoji(xPx, yPx - (charHeight / 2));
+            renderHeadEmoji(xPx, yPx - (charHeight / 2), p.reactionEmoji);
           }
 
           if (p.msg && Date.now() - p.msgTime < 5000) {
@@ -950,7 +958,9 @@
           room: players[myRole].room,
           msg: players[myRole].msg || '',
           msgTime: players[myRole].msgTime || 0,
-          isSleeping: players[myRole].isSleeping || false
+          isSleeping: players[myRole].isSleeping || false,
+          reactionEmoji: players[myRole].reactionEmoji || '',
+          reactionTime: players[myRole].reactionTime || 0
         });
         lastSaveTime = now;
       }
