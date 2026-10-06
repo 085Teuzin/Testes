@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AirDrop P2P Pessoal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-[100dvh] flex flex-col justify-between selection:bg-brand-500 selection:text-white overflow-x-hidden">
+
+    <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center shadow-md shadow-brand-500/20">
+                    <i class="fa-solid fa-bolt text-white text-xs"></i>
+                </div>
+                <h1 class="font-semibold text-sm tracking-tight">AirDrop P2P</h1>
+            </div>
+            <div class="flex items-center space-x-2 bg-slate-950/60 border border-slate-800/80 px-2.5 py-1 rounded-full">
+                <span id="dot" class="w-2 h-2 rounded-full bg-amber-500"></span>
+                <span id="status" class="text-[11px] text-slate-300 font-medium">Iniciando...</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-3xl w-full mx-auto px-4 py-4 flex flex-col gap-4">
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 shadow-lg flex flex-col items-center justify-center text-center">
+                <span class="text-xs font-medium text-slate-400 mb-2.5">Parear Dispositivo</span>
+                <div id="qrcode" class="bg-white p-2 rounded-xl shadow mb-2.5"></div>
+                <div id="roomcode" class="text-xs font-mono bg-slate-950 text-brand-400 px-3 py-1.5 rounded-xl border border-slate-800 mb-2.5 w-full truncate">-</div>
+                <div class="w-full flex gap-2 mb-2">
+                    <input type="text" id="target" placeholder="Código" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500 text-center uppercase">
+                    <button onclick="connect()" class="bg-brand-600 hover:bg-brand-700 active:scale-95 text-white px-3.5 py-2 rounded-xl text-xs font-medium transition shrink-0">Conectar</button>
+                </div>
+                <button onclick="openScanner()" class="w-full bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 py-2 rounded-xl text-xs font-medium transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-camera"></i> Ler QR Code
+                </button>
+            </div>
+
+            <div class="flex flex-col gap-4">
+                <div id="drop" class="border-2 border-dashed border-slate-800 hover:border-brand-500 bg-slate-900/40 hover:bg-slate-900/70 rounded-2xl p-6 text-center transition cursor-pointer flex flex-col items-center justify-center flex-1 min-h-[160px] relative overflow-hidden group">
+                    <input type="file" id="fileinput" multiple class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
+                    <div class="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-500 flex items-center justify-center text-lg mb-2.5 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                    </div>
+                    <p class="text-xs font-medium text-slate-200 mb-1">Toque ou solte arquivos</p>
+                    <p class="text-[11px] text-slate-400">Envio direto sem limite</p>
+                </div>
+
+                <div id="progcard" class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3.5 shadow-lg hidden">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <span id="progname" class="text-xs font-medium text-slate-200 truncate max-w-[180px]">arquivo</span>
+                        <span id="progtext" class="text-xs font-mono font-semibold text-brand-400">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                        <div id="progbar" class="bg-brand-500 h-full w-0 transition-all duration-100 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 shadow-lg flex-1 flex flex-col min-h-[200px]">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Histórico</span>
+                <button onclick="clearHistory()" class="text-xs text-slate-400 hover:text-slate-200 transition">Limpar</button>
+            </div>
+            <div id="history" class="space-y-2 overflow-y-auto max-h-[220px] flex-1 pr-1">
+                <div id="empty" class="text-xs text-slate-500 text-center py-8">Nenhum arquivo transferido</div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="scanner-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex flex-col items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 w-full max-w-sm flex flex-col items-center shadow-2xl">
+            <div class="flex justify-between w-full items-center mb-3">
+                <span class="text-xs font-semibold text-slate-200">Centralizar QR Code na Câmera</span>
+                <button onclick="closeScanner()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-sm"></i></button>
+            </div>
+            <div id="reader" class="w-full rounded-xl overflow-hidden bg-slate-950"></div>
+        </div>
+    </div>
+
+    <script>
+        let peer = null, conn = null, myId = '', meta = null, chunks = [], receivedBytes = 0, html5QrCode = null;
+
+        function init() {
+            const p = new URLSearchParams(window.location.search).get('room');
+            peer = new Peer({ config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] } });
+
+            peer.on('open', (id) => {
+                myId = p || id.substring(0, 6).toUpperCase();
+                document.getElementById('roomcode').textContent = `Sala: ${myId}`;
+                document.getElementById('target').value = myId;
+                setupQR(myId);
+                if (p && p !== myId) {
+                    connectTo(p);
+                } else {
+                    setStatus('Pronto', 'emerald');
+                }
+            });
+
+            peer.on('connection', (c) => {
+                conn = c;
+                setupConn();
+                setStatus('Conectado', 'emerald');
+            });
+
+            peer.on('error', () => setStatus('Erro', 'rose'));
+        }
+
+        function setupQR(code) {
+            const url = window.location.origin + window.location.pathname + '?room=' + code;
+            const el = document.getElementById('qrcode');
+            el.innerHTML = '';
+            new QRCode(el, { text: url, width: 96, height: 96, colorDark: "#0f172a", colorLight: "#ffffff" });
+        }
+
+        function setStatus(txt, color) {
+            document.getElementById('status').textContent = txt;
+            document.getElementById('dot').className = `w-2 h-2 rounded-full ${color === 'emerald' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`;
+        }
+
+        function connect() {
+            const target = document.getElementById('target').value.trim().toUpperCase();
+            if (target) connectTo(target);
+        }
+
+        function connectTo(target) {
+            setStatus('Conectando...', 'amber');
+            conn = peer.connect(target);
+            setupConn();
+        }
+
+        function setupConn() {
+            conn.on('open', () => setStatus('Conectado', 'emerald'));
+            conn.on('data', (d) => {
+                if (d.type === 'meta') {
+                    meta = d; chunks = []; receivedBytes = 0;
+                    showProg(meta.name);
+                } else if (d.type === 'chunk') {
+                    chunks.push(d.buf);
+                    receivedBytes += d.buf.byteLength;
+                    const pct = Math.round((receivedBytes / meta.size) * 100);
+                    updateProg(pct);
+                    if (receivedBytes === meta.size) {
+                        const url = URL.createObjectURL(new Blob(chunks));
+                        addHist(meta.name, meta.size, url, 'Recebido');
+                        hideProg();
+                    }
+                }
+            });
+            conn.on('close', () => setStatus('Desconectado', 'rose'));
+        }
+
+        const input = document.getElementById('fileinput');
+        input.addEventListener('change', (e) => { if (e.target.files[0]) sendFile(e.target.files[0]); });
+
+        const drop = document.getElementById('drop');
+        ['dragenter', 'dragover'].forEach(e => drop.addEventListener(e, (evt) => evt.preventDefault()));
+        drop.addEventListener('drop', (evt) => {
+            evt.preventDefault();
+            if (evt.dataTransfer.files[0]) sendFile(evt.dataTransfer.files[0]);
+        });
+
+        function sendFile(file) {
+            if (!conn || conn.open !== true) {
+                addHist(file.name, file.size, URL.createObjectURL(file), 'Enviado (Offline)');
+                return;
+            }
+            showProg(file.name);
+            conn.send({ type: 'meta', name: file.name, size: file.size });
+            const reader = new FileReader();
+            let offset = 0, size = 16384;
+
+            reader.onload = (e) => {
+                conn.send({ type: 'chunk', buf: e.target.result });
+                offset += e.target.result.byteLength;
+                updateProg(Math.round((offset / file.size) * 100));
+                if (offset < file.size) readNext();
+                else {
+                    hideProg();
+                    addHist(file.name, file.size, URL.createObjectURL(file), 'Enviado');
+                }
+            };
+
+            function readNext() { reader.readAsArrayBuffer(file.slice(offset, offset + size)); }
+            readNext();
+        }
+
+        function showProg(name) {
+            document.getElementById('progcard').classList.remove('hidden');
+            document.getElementById('progname').textContent = name;
+        }
+
+        function hideProg() { document.getElementById('progcard').classList.add('hidden'); }
+
+        function updateProg(pct) {
+            document.getElementById('progtext').textContent = `${pct}%`;
+            document.getElementById('progbar').style.width = `${pct}%`;
+        }
+
+        function addHist(name, size, url, type) {
+            const list = document.getElementById('history');
+            document.getElementById('empty')?.remove();
+            const sz = size > 1024*1024 ? (size/(1024*1024)).toFixed(1) + ' MB' : (size/1024).toFixed(1) + ' KB';
+            const item = document.createElement('div');
+            item.className = 'flex items-center justify-between bg-slate-950 p-2.5 rounded-xl border border-slate-800';
+            item.innerHTML = `
+                <div class="overflow-hidden mr-2">
+                    <p class="text-xs font-medium text-slate-200 truncate">${name}</p>
+                    <p class="text-[10px] text-slate-400">${sz} • ${type}</p>
+                </div>
+                <a href="${url}" download="${name}" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition shrink-0">Baixar</a>
+            `;
+            list.prepend(item);
+        }
+
+        function clearHistory() {
+            document.getElementById('history').innerHTML = '<div id="empty" class="text-xs text-slate-500 text-center py-8">Nenhum arquivo transferido</div>';
+        }
+
+        function openScanner() {
+            document.getElementById('scanner-modal').classList.remove('hidden');
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: 200 },
+                (decodedText) => {
+                    closeScanner();
+                    try {
+                        const urlObj = new URL(decodedText);
+                        const roomParam = urlObj.searchParams.get('room');
+                        if (roomParam) {
+                            document.getElementById('target').value = roomParam;
+                            connectTo(roomParam);
+                        } else {
+                            window.location.href = decodedText;
+                        }
+                    } catch (e) {
+                        document.getElementById('target').value = decodedText.trim();
+                        connect();
+                    }
+                },
+                (errorMessage) => {}
+            ).catch(err => {
+                alert("Erro ao acessar a câmera.");
+                closeScanner();
+            });
+        }
+
+        function closeScanner() {
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    document.getElementById('scanner-modal').classList.add('hidden');
+                }).catch(() => {
+                    document.getElementById('scanner-modal').classList.add('hidden');
+                });
+            } else {
+                document.getElementById('scanner-modal').classList.add('hidden');
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
