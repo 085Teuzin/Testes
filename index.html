@@ -23,7 +23,7 @@
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-[100dvh] flex flex-col justify-between selection:bg-brand-500 selection:text-white overflow-x-hidden">
@@ -48,11 +48,11 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 shadow-lg flex flex-col items-center justify-center text-center">
                 <span class="text-xs font-medium text-slate-400 mb-2.5">Parear Dispositivo</span>
-                <div id="qrcode" class="bg-white p-2 rounded-xl shadow mb-2.5"></div>
+                <div id="qrcode" class="bg-white p-2 rounded-xl shadow mb-2.5 flex items-center justify-center min-h-[96px] min-w-[96px]"></div>
                 <div id="roomcode" class="text-xs font-mono bg-slate-950 text-brand-400 px-3 py-1.5 rounded-xl border border-slate-800 mb-2.5 w-full truncate">-</div>
                 <div class="w-full flex gap-2 mb-2">
-                    <input type="text" id="target" placeholder="Código" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500 text-center uppercase">
-                    <button onclick="connect()" class="bg-brand-600 hover:bg-brand-700 active:scale-95 text-white px-3.5 py-2 rounded-xl text-xs font-medium transition shrink-0">Conectar</button>
+                    <input type="text" id="target" placeholder="Código" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500 text-center uppercase font-mono">
+                    <button onclick="manualConnect()" class="bg-brand-600 hover:bg-brand-700 active:scale-95 text-white px-3.5 py-2 rounded-xl text-xs font-medium transition shrink-0">Conectar</button>
                 </div>
                 <button onclick="openScanner()" class="w-full bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 py-2 rounded-xl text-xs font-medium transition flex items-center justify-center gap-2">
                     <i class="fa-solid fa-camera"></i> Ler QR Code
@@ -66,7 +66,7 @@
                         <i class="fa-solid fa-cloud-arrow-up"></i>
                     </div>
                     <p class="text-xs font-medium text-slate-200 mb-1">Toque ou solte arquivos</p>
-                    <p class="text-[11px] text-slate-400">Envio direto sem limite</p>
+                    <p class="text-[11px] text-slate-400">P2P direto na rede</p>
                 </div>
 
                 <div id="progcard" class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3.5 shadow-lg hidden">
@@ -99,43 +99,68 @@
                 <span class="text-xs font-semibold text-slate-200">Centralizar QR Code na Câmera</span>
                 <button onclick="closeScanner()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-sm"></i></button>
             </div>
-            <div id="reader" class="w-full rounded-xl overflow-hidden bg-slate-950"></div>
+            <div id="reader" class="w-full rounded-xl overflow-hidden bg-slate-950 min-h-[250px]"></div>
         </div>
     </div>
 
     <script>
-        let peer = null, conn = null, myId = '', meta = null, chunks = [], receivedBytes = 0, html5QrCode = null;
+        let peer = null, conn = null, myId = '', incomingMeta = null, incomingChunks = [], receivedBytes = 0, html5QrCode = null;
 
         function init() {
-            const p = new URLSearchParams(window.location.search).get('room');
-            peer = new Peer({ config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] } });
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetPeer = urlParams.get('room');
+            
+            const randomId = 'AIR-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+            
+            peer = new Peer(randomId, {
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                }
+            });
 
             peer.on('open', (id) => {
-                myId = p || id.substring(0, 6).toUpperCase();
+                myId = id;
                 document.getElementById('roomcode').textContent = `Sala: ${myId}`;
-                document.getElementById('target').value = myId;
-                setupQR(myId);
-                if (p && p !== myId) {
-                    connectTo(p);
+                document.getElementById('target').value = targetPeer || '';
+                updateQRCode(myId);
+                
+                if (targetPeer && targetPeer !== myId) {
+                    setTimeout(() => connectTo(targetPeer), 1000);
                 } else {
                     setStatus('Pronto', 'emerald');
                 }
             });
 
-            peer.on('connection', (c) => {
-                conn = c;
-                setupConn();
+            peer.on('connection', (incomingConn) => {
+                if (conn) {
+                    conn.close();
+                }
+                conn = incomingConn;
+                setupConnection();
                 setStatus('Conectado', 'emerald');
             });
 
-            peer.on('error', () => setStatus('Erro', 'rose'));
+            peer.on('error', (err) => {
+                console.error(err);
+                setStatus('Erro na Conexão', 'rose');
+            });
         }
 
-        function setupQR(code) {
+        function updateQRCode(code) {
             const url = window.location.origin + window.location.pathname + '?room=' + code;
             const el = document.getElementById('qrcode');
             el.innerHTML = '';
-            new QRCode(el, { text: url, width: 96, height: 96, colorDark: "#0f172a", colorLight: "#ffffff" });
+            new QRCode(el, {
+                text: url,
+                width: 96,
+                height: 96,
+                colorDark: "#0f172a",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
         }
 
         function setStatus(txt, color) {
@@ -143,71 +168,110 @@
             document.getElementById('dot').className = `w-2 h-2 rounded-full ${color === 'emerald' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`;
         }
 
-        function connect() {
+        function manualConnect() {
             const target = document.getElementById('target').value.trim().toUpperCase();
-            if (target) connectTo(target);
+            if (target) {
+                connectTo(target);
+            }
         }
 
-        function connectTo(target) {
+        function connectTo(targetId) {
+            if (!peer || targetId === myId) return;
             setStatus('Conectando...', 'amber');
-            conn = peer.connect(target);
-            setupConn();
+            if (conn) {
+                conn.close();
+            }
+            conn = peer.connect(targetId, { reliable: true });
+            setupConnection();
         }
 
-        function setupConn() {
-            conn.on('open', () => setStatus('Conectado', 'emerald'));
-            conn.on('data', (d) => {
-                if (d.type === 'meta') {
-                    meta = d; chunks = []; receivedBytes = 0;
-                    showProg(meta.name);
-                } else if (d.type === 'chunk') {
-                    chunks.push(d.buf);
-                    receivedBytes += d.buf.byteLength;
-                    const pct = Math.round((receivedBytes / meta.size) * 100);
+        function setupConnection() {
+            if (!conn) return;
+
+            conn.on('open', () => {
+                setStatus('Conectado', 'emerald');
+            });
+
+            conn.on('data', (data) => {
+                if (data.type === 'meta') {
+                    incomingMeta = data;
+                    incomingChunks = [];
+                    receivedBytes = 0;
+                    showProg(incomingMeta.name);
+                } else if (data.type === 'chunk') {
+                    incomingChunks.push(data.buf);
+                    receivedBytes += data.buf.byteLength;
+                    const pct = Math.round((receivedBytes / incomingMeta.size) * 100);
                     updateProg(pct);
-                    if (receivedBytes === meta.size) {
-                        const url = URL.createObjectURL(new Blob(chunks));
-                        addHist(meta.name, meta.size, url, 'Recebido');
+                    if (receivedBytes >= incomingMeta.size) {
+                        const blob = new Blob(incomingChunks);
+                        const url = URL.createObjectURL(blob);
+                        addHist(incomingMeta.name, incomingMeta.size, url, 'Recebido');
                         hideProg();
                     }
                 }
             });
-            conn.on('close', () => setStatus('Desconectado', 'rose'));
+
+            conn.on('close', () => {
+                setStatus('Desconectado', 'rose');
+            });
+
+            conn.on('error', () => {
+                setStatus('Erro no canal', 'rose');
+            });
         }
 
-        const input = document.getElementById('fileinput');
-        input.addEventListener('change', (e) => { if (e.target.files[0]) sendFile(e.target.files[0]); });
+        const fileInput = document.getElementById('fileinput');
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                sendFile(e.target.files[0]);
+            }
+        });
 
-        const drop = document.getElementById('drop');
-        ['dragenter', 'dragover'].forEach(e => drop.addEventListener(e, (evt) => evt.preventDefault()));
-        drop.addEventListener('drop', (evt) => {
-            evt.preventDefault();
-            if (evt.dataTransfer.files[0]) sendFile(evt.dataTransfer.files[0]);
+        const dropArea = document.getElementById('drop');
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, (e) => e.preventDefault(), false);
+        });
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                sendFile(e.dataTransfer.files[0]);
+            }
         });
 
         function sendFile(file) {
             if (!conn || conn.open !== true) {
-                addHist(file.name, file.size, URL.createObjectURL(file), 'Enviado (Offline)');
+                alert('Conecte-se a outro dispositivo primeiro.');
                 return;
             }
+
             showProg(file.name);
-            conn.send({ type: 'meta', name: file.name, size: file.size });
+            conn.send({ type: 'meta', name: file.name, size: file.size, mime: file.type });
+
+            const chunkSize = 64 * 1024; // 64KB chunks for optimal throughput
+            let offset = 0;
             const reader = new FileReader();
-            let offset = 0, size = 16384;
 
             reader.onload = (e) => {
                 conn.send({ type: 'chunk', buf: e.target.result });
                 offset += e.target.result.byteLength;
-                updateProg(Math.round((offset / file.size) * 100));
-                if (offset < file.size) readNext();
-                else {
+                const pct = Math.round((offset / file.size) * 100);
+                updateProg(pct);
+
+                if (offset < file.size) {
+                    readNextChunk();
+                } else {
                     hideProg();
                     addHist(file.name, file.size, URL.createObjectURL(file), 'Enviado');
                 }
             };
 
-            function readNext() { reader.readAsArrayBuffer(file.slice(offset, offset + size)); }
-            readNext();
+            function readNextChunk() {
+                const slice = file.slice(offset, offset + chunkSize);
+                reader.readAsArrayBuffer(slice);
+            }
+
+            readNextChunk();
         }
 
         function showProg(name) {
@@ -215,7 +279,9 @@
             document.getElementById('progname').textContent = name;
         }
 
-        function hideProg() { document.getElementById('progcard').classList.add('hidden'); }
+        function hideProg() {
+            document.getElementById('progcard').classList.add('hidden');
+        }
 
         function updateProg(pct) {
             document.getElementById('progtext').textContent = `${pct}%`;
@@ -225,7 +291,7 @@
         function addHist(name, size, url, type) {
             const list = document.getElementById('history');
             document.getElementById('empty')?.remove();
-            const sz = size > 1024*1024 ? (size/(1024*1024)).toFixed(1) + ' MB' : (size/1024).toFixed(1) + ' KB';
+            const sz = size > 1024 * 1024 ? (size / (1024 * 1024)).toFixed(1) + ' MB' : (size / 1024).toFixed(1) + ' KB';
             const item = document.createElement('div');
             item.className = 'flex items-center justify-between bg-slate-950 p-2.5 rounded-xl border border-slate-800';
             item.innerHTML = `
@@ -247,7 +313,7 @@
             html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start(
                 { facingMode: "environment" },
-                { fps: 10, qrbox: 200 },
+                { fps: 15, qrbox: 220 },
                 (decodedText) => {
                     closeScanner();
                     try {
@@ -257,16 +323,17 @@
                             document.getElementById('target').value = roomParam;
                             connectTo(roomParam);
                         } else {
-                            window.location.href = decodedText;
+                            document.getElementById('target').value = decodedText.trim();
+                            manualConnect();
                         }
                     } catch (e) {
                         document.getElementById('target').value = decodedText.trim();
-                        connect();
+                        manualConnect();
                     }
                 },
                 (errorMessage) => {}
             ).catch(err => {
-                alert("Erro ao acessar a câmera.");
+                alert('Erro ao iniciar a câmera.');
                 closeScanner();
             });
         }
